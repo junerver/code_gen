@@ -112,7 +112,11 @@ import {useChat} from "~/composables/useChat";
 import type {TypewriterProps} from "vue-element-plus-x/types/Typewriter";
 import type {BubbleProps} from "vue-element-plus-x/types/Bubble";
 import type {ConversationItem, ConversationMenuCommand} from "vue-element-plus-x/types/Conversations";
-import type {BubbleListInstance} from "vue-element-plus-x/types/BubbleList";
+import {useHead} from '#app';
+
+useHead({
+  title: 'AI代码生成助手',
+});
 
 // 会话管理相关数据
 interface Conversation {

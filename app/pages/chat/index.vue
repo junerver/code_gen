@@ -3,12 +3,15 @@
     <!-- 左侧会话管理 -->
     <div class="chat-sidebar">
       <Conversations
-        :conversations="conversations"
-        :active-conversation="activeConversation"
+        v-model:active="activeConversation"
+        :items="conversations"
         class="conversations-panel"
-        @conversation-select="handleConversationSelect"
-        @conversation-create="handleConversationCreate"
-        @conversation-delete="handleConversationDelete"
+        row-key="id"
+        groupable
+        tooltip-placement="right"
+        :tooltip-offset="35"
+        @change ="handleConversationSelect"
+        @menu-command="handleMenuCommand"
       >
         <template #header>
           <div class="conversations-header">
@@ -108,11 +111,15 @@ import {BubbleList, Conversations, Sender} from "vue-element-plus-x";
 import {useChat} from "~/composables/useChat";
 import type {TypewriterProps} from "vue-element-plus-x/types/Typewriter";
 import type {BubbleProps} from "vue-element-plus-x/types/Bubble";
+import type {ConversationItem, ConversationMenuCommand} from "vue-element-plus-x/types/Conversations";
+import type {BubbleListInstance} from "vue-element-plus-x/types/BubbleList";
 
 // 会话管理相关数据
 interface Conversation {
   id: string;
-  title: string;
+  label: string;
+  group?: string;
+  disabled?: boolean;
   lastMessage?: string;
   timestamp: Date;
 }
@@ -123,17 +130,16 @@ const {messages, loading, error, sendMessage, clearMessages} = useChat();
 // 响应式数据
 const inputMessage = ref("");
 const messagesContainer = ref<HTMLElement>();
-const conversations = ref<Conversation[]>([]);
+const conversations = ref<ConversationItem<Conversation>[]>([]);
 const activeConversation = ref<string>("");
-const bubbleListRef =
-  useTemplateRef<InstanceType<typeof BubbleList>>("bubbleListRef");
+const bubbleListRef = ref();
 
 // 头像配置
 const userAvatar = "https://avatars.githubusercontent.com/u/76239030?v=4";
 const assistantAvatar =
   "https://cube.elemecdn.com/9/c2/f0ee8a3c7c9638a54940382568c9dpng.png";
 
-// 格式化消息数据
+// 格式化消息数据，将存储在内存中的数据转换成 BubbleList 组件需要的数据结构
 const formattedMessages = computed<BubbleProps[]>(() => {
   return messages.value.map((message) => {
     const isUser = message.role === "user";
@@ -171,21 +177,22 @@ const handleSendMessage = async (message?: string): Promise<void> => {
 
 /**
  * 处理会话选择
- * @param conversationId 会话ID
+ * @param item 选中的会话项
  */
-const handleConversationSelect = (conversationId: string): void => {
-  activeConversation.value = conversationId;
+const handleConversationSelect = (item: ConversationItem<Conversation>): void => {
+  activeConversation.value = item.id;
   // 这里可以加载对应会话的消息
-  ElMessage.info(`切换到会话: ${conversationId}`);
+  ElMessage.info(`切换到会话: ${item.label}`);
 };
 
 /**
  * 处理创建新会话
  */
 const handleConversationCreate = (): void => {
-  const newConversation: Conversation = {
+  const newConversation: ConversationItem<Conversation> = {
     id: `conv_${Date.now()}`,
-    title: `新对话 ${conversations.value.length + 1}`,
+    label: `新对话 ${conversations.value.length + 1}`,
+    group: 'recent',
     timestamp: new Date(),
   };
   conversations.value.unshift(newConversation);
@@ -194,22 +201,30 @@ const handleConversationCreate = (): void => {
   ElMessage.success("已创建新对话");
 };
 
-/**
- * 处理删除会话
- * @param conversationId 会话ID
- */
-const handleConversationDelete = (conversationId: string): void => {
-  const index = conversations.value.findIndex(
-    (conv) => conv.id === conversationId
-  );
-  if (index > -1) {
-    conversations.value.splice(index, 1);
-    if (activeConversation.value === conversationId) {
-      activeConversation.value = conversations.value[0]?.id || "";
+// 内置菜单点击方法
+function handleMenuCommand(
+  command: ConversationMenuCommand,
+  item: ConversationItem<Conversation>
+) {
+  console.log('内置菜单点击事件：', command, item);
+  // 直接修改 item 是否生效
+  if (command === 'delete') {
+    const index = conversations.value.findIndex(
+      itemSlef => itemSlef.id === item.id
+    );
+
+    if (index !== -1) {
+      conversations.value.splice(index, 1);
+      console.log('删除成功');
+      ElMessage.success('删除成功');
     }
-    ElMessage.success("会话已删除");
   }
-};
+  if (command === 'rename') {
+    item.label = '已修改';
+    console.log('重命名成功');
+    ElMessage.success('重命名成功');
+  }
+}
 
 /**
  * 处理清空聊天
@@ -237,7 +252,7 @@ const handleClearChat = (): void => {
  * 滚动到底部
  */
 const scrollToBottom = async (): Promise<void> => {
-  bubbleListRef.value.scrollToBottom();
+  bubbleListRef.value?.scrollToBottom();
 };
 
 // 组件挂载时初始化

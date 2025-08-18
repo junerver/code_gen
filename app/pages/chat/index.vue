@@ -36,7 +36,7 @@
         <div class="header-content">
           <h2 class="chat-title">
             <el-icon>
-              <ChatDotRound/>
+              <ChatDotRound />
             </el-icon>
             AI代码生成助手
           </h2>
@@ -62,7 +62,7 @@
             <el-empty description="开始您的第一次对话吧！">
               <template #image>
                 <el-icon size="64" color="#409eff">
-                  <ChatDotRound/>
+                  <ChatDotRound />
                 </el-icon>
               </template>
             </el-empty>
@@ -104,16 +104,21 @@
 </template>
 
 <script setup lang="ts">
-import {ref, onMounted, computed} from "vue";
-import {ChatDotRound, Delete, Plus} from "@element-plus/icons-vue";
-import {ElMessage, ElMessageBox} from "element-plus";
-import {BubbleList, Conversations, Sender} from "vue-element-plus-x";
-import {useChat} from "~/composables/useChat";
-import type {TypewriterProps} from "vue-element-plus-x/types/Typewriter";
-import type {BubbleProps} from "vue-element-plus-x/types/Bubble";
-import type {ConversationItem, ConversationMenuCommand} from "vue-element-plus-x/types/Conversations";
-import {useHead} from '#app';
+import { ref, onMounted, computed } from "vue";
+import { ChatDotRound, Delete, Plus } from "@element-plus/icons-vue";
+import { ElMessage, ElMessageBox } from "element-plus";
+import { BubbleList, Conversations, Sender } from "vue-element-plus-x";
+import { useChat } from "~/composables/useChat";
+import type { TypewriterProps } from "vue-element-plus-x/types/Typewriter";
+import type { BubbleProps } from "vue-element-plus-x/types/Bubble";
+import type {
+  ConversationItem,
+  ConversationMenuCommand,
+} from "vue-element-plus-x/types/Conversations";
 
+// 使用 NuxtJS 提供的请求钩子
+const { data } = await useFetch("/api/chat",{method: "POST"});
+// 修改 title
 useHead({
   title: 'AI代码生成助手',
 });
@@ -129,7 +134,7 @@ interface Conversation {
 }
 
 // 使用聊天功能
-const {messages, loading, error, sendMessage, clearMessages} = useChat();
+const { messages, loading, error, sendMessage, clearMessages } = useChat();
 
 // 响应式数据
 const inputMessage = ref("");
@@ -152,7 +157,7 @@ const formattedMessages = computed<BubbleProps[]>(() => {
     const placement = isUser ? "end" : "start";
     const typing: TypewriterProps["typing"] = isUser
       ? false
-      : {step: 5, interval: 35};
+      : { step: 5, interval: 35 };
     return {
       ...message,
       placement,
@@ -184,7 +189,9 @@ const handleSendMessage = async (message?: string): Promise<void> => {
  * 处理会话选择
  * @param item 选中的会话项
  */
-const handleConversationSelect = (item: ConversationItem<Conversation>): void => {
+const handleConversationSelect = (
+  item: ConversationItem<Conversation>
+): void => {
   activeConversation.value = item.id;
   // 这里可以加载对应会话的消息
   ElMessage.info(`切换到会话: ${item.label}`);
@@ -197,7 +204,7 @@ const handleConversationCreate = (): void => {
   const newConversation: ConversationItem<Conversation> = {
     id: `conv_${Date.now()}`,
     label: `新对话 ${conversations.value.length + 1}`,
-    group: 'recent',
+    group: "recent",
     timestamp: new Date(),
   };
   conversations.value.unshift(newConversation);
@@ -211,23 +218,23 @@ function handleMenuCommand(
   command: ConversationMenuCommand,
   item: ConversationItem<Conversation>
 ) {
-  console.log('内置菜单点击事件：', command, item);
+  console.log("内置菜单点击事件：", command, item);
   // 直接修改 item 是否生效
-  if (command === 'delete') {
+  if (command === "delete") {
     const index = conversations.value.findIndex(
-      itemSlef => itemSlef.id === item.id
+      (itemSlef) => itemSlef.id === item.id
     );
 
     if (index !== -1) {
       conversations.value.splice(index, 1);
-      console.log('删除成功');
-      ElMessage.success('删除成功');
+      console.log("删除成功");
+      ElMessage.success("删除成功");
     }
   }
-  if (command === 'rename') {
-    item.label = '已修改';
-    console.log('重命名成功');
-    ElMessage.success('重命名成功');
+  if (command === "rename") {
+    item.label = "已修改";
+    console.log("重命名成功");
+    ElMessage.success("重命名成功");
   }
 }
 

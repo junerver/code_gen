@@ -10,7 +10,7 @@
         groupable
         tooltip-placement="right"
         :tooltip-offset="35"
-        @change ="handleConversationSelect"
+        @change="handleConversationSelect"
         @menu-command="handleMenuCommand"
       >
         <template #header>
@@ -158,6 +158,7 @@ const formattedMessages = computed<BubbleProps[]>(() => {
       variant,
       typing,
       maxWidth: isUser ? "500px" : "900px",
+      isMarkdown: isUser ? false : true,
     };
   });
 });

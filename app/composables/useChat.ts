@@ -64,7 +64,7 @@ export const useChat = () => {
       await new Promise(resolve => setTimeout(resolve, 1000))
 
       // 模拟助手回复
-      const response = `我收到了您的消息："${content}"。这是一个模拟回复，实际项目中这里会调用AI API。`
+      const response = `我收到了您的消息：\n${content}\n\n这是一个模拟回复，实际项目中这里会调用AI API。`
       addAssistantMessage(response)
 
     } catch (err) {

@@ -11,6 +11,7 @@ import { ollama } from "ollama-ai-provider-v2";
 import { streamText } from "ai";
 
 export default defineLazyEventHandler(async () => {
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	return defineEventHandler(async (event: any) => {
 		const { messages } = await readBody(event);
 		const result = streamText({

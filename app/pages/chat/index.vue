@@ -137,10 +137,7 @@ interface Conversation {
 // 使用聊天功能
 const {messages, loading, error, sendMessage, clearMessages} = useChat();
 
-// 使用 NuxtJS 提供的请求钩子
-const {execute} = await useFetch("/api/chat", {method: "POST", lazy: true, immediate: false,body:{
-    messages:messages
-  }});
+// 移除了useFetch，现在直接在useChat中处理API调用
 
 // 响应式数据
 const inputMessage = ref("");
@@ -186,9 +183,8 @@ const handleSendMessage = async (message?: string): Promise<void> => {
   if (!messageContent || loading.value) return;
 
   inputMessage.value = "";
-  // 发送消息并获取新消息ID
+  // 发送消息，现在包含流式处理
   await sendMessage(messageContent);
-  execute()
   await scrollToBottom();
 };
 

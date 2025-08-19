@@ -104,6 +104,7 @@ export const useChat = () => {
 				role: "assistant",
 				timestamp: new Date(),
 				loading: true,
+				typing: true,
 			};
 			messages.value.push(assistantMessage);
 
@@ -157,25 +158,40 @@ export const useChat = () => {
 					}
 				}
 			}
+
+			// 流式响应完成，确保typing状态被设置为false
+			if (conversationStore.activeConversationId) {
+				conversationStore.updateMessage(
+					conversationStore.activeConversationId,
+					assistantMessageId,
+					accumulatedContent,
+				);
+			}
 		} catch (err) {
 			error.value = err instanceof Error ? err.message : "发送消息失败";
 			console.error("发送消息失败:", err);
 
-			// 如果出错，移除最后添加的空助手消息
+			// 如果出错，处理助手消息状态
 			if (conversationStore.activeConversationId) {
 				const currentMessages = conversationStore.getMessages(
 					conversationStore.activeConversationId,
 				);
 				const lastMessage = currentMessages[currentMessages.length - 1];
-				if (
-					currentMessages.length > 0 &&
-					lastMessage?.role === "assistant" &&
-					lastMessage?.content === ""
-				) {
-					conversationStore.deleteMessage(
-						conversationStore.activeConversationId,
-						lastMessage.id,
-					);
+				if (currentMessages.length > 0 && lastMessage?.role === "assistant") {
+					if (lastMessage.content === "") {
+						// 如果消息为空，删除消息
+						conversationStore.deleteMessage(
+							conversationStore.activeConversationId,
+							lastMessage.id,
+						);
+					} else {
+						// 如果消息有内容，确保typing和loading状态为false
+						conversationStore.updateMessage(
+							conversationStore.activeConversationId,
+							lastMessage.id,
+							lastMessage.content,
+						);
+					}
 				}
 			}
 		} finally {

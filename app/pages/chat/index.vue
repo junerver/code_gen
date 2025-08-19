@@ -172,9 +172,10 @@ const formattedMessages = computed<BubbleProps[]>(() => {
     const shape = "corner";
     const variant = !isUser ? "filled" : "outlined";
     const placement = isUser ? "end" : "start";
-    const typing: TypewriterProps["typing"] = isUser
-      ? false
-      : { step: 5, interval: 35 };
+    // 根据消息的typing字段决定是否显示打字机效果
+    const typing: TypewriterProps["typing"] = message.typing
+      ? { step: 5, interval: 35 }
+      : false;
     return {
       ...message,
       placement,

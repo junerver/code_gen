@@ -158,6 +158,10 @@ export const useConversationStore = defineStore("conversation", () => {
 				if (message.loading) {
 					message.loading = false;
 				}
+				// 当内容更新时，设置typing为false（表示打字完成）
+				if (message.typing) {
+					message.typing = false;
+				}
 			}
 		}
 	};

@@ -1,5 +1,8 @@
 /**
- * 聊天消息接口
+ * 气泡聊天消息的数据类型
+ * @Date 2025/8/18 18:49
+ * @LastEditors 侯文君
+ * @LastEditTime 18:49
  */
 export interface ChatMessage {
 	id: string;
@@ -9,4 +12,6 @@ export interface ChatMessage {
 	role: "user" | "assistant" | "system";
 	timestamp: Date;
 	avatar?: string;
+	// 气泡加载状态
+	loading?: boolean;
 }

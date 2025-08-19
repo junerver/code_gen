@@ -57,6 +57,9 @@ export const useChat = () => {
 		);
 		if (messageIndex > -1) {
 			if (messages.value[messageIndex]) {
+				if (messages.value[messageIndex].loading) {
+					messages.value[messageIndex].loading = false;
+				}
 				messages.value[messageIndex].content = content;
 			}
 		}
@@ -83,6 +86,7 @@ export const useChat = () => {
 				content: "",
 				role: "assistant",
 				timestamp: new Date(),
+				loading: true,
 			};
 			messages.value.push(assistantMessage);
 

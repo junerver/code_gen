@@ -218,6 +218,47 @@ export const useConversationStore = defineStore("conversation", () => {
 	};
 
 	/**
+	 * 检查最新创建的会话是否有消息
+	 * @returns 如果最新会话没有消息返回true，否则返回false
+	 */
+	const isLatestConversationEmpty = (): boolean => {
+		if (conversations.value.length === 0) {
+			return false; // 没有会话时允许创建
+		}
+
+		// 找到最新创建的会话（按创建时间排序）
+		const latestConversation = conversations.value.reduce((latest, current) => {
+			return new Date(current.createdAt) > new Date(latest.createdAt)
+				? current
+				: latest;
+		});
+
+		// 检查最新会话是否有消息
+		const messages =
+			conversationMessages.value.get(latestConversation.id) || [];
+		return messages.length === 0;
+	};
+
+	/**
+	 * 切换到最新创建的会话
+	 */
+	const switchToLatestConversation = (): void => {
+		if (conversations.value.length === 0) {
+			return;
+		}
+
+		// 找到最新创建的会话（按创建时间排序）
+		const latestConversation = conversations.value.reduce((latest, current) => {
+			return new Date(current.createdAt) > new Date(latest.createdAt)
+				? current
+				: latest;
+		});
+
+		// 切换到最新会话
+		setActiveConversation(latestConversation.id);
+	};
+
+	/**
 	 * 重置所有状态
 	 */
 	const reset = (): void => {
@@ -248,6 +289,8 @@ export const useConversationStore = defineStore("conversation", () => {
 		clearMessages,
 		getMessages,
 		initializeDefaultConversation,
+		isLatestConversationEmpty,
+		switchToLatestConversation,
 		reset,
 	};
 });

@@ -222,6 +222,13 @@ const handleConversationSelect = (
  * 处理创建新会话
  */
 const handleConversationCreate = (): void => {
+  // 检查最新创建的会话是否有消息
+  if (conversationStore.isLatestConversationEmpty()) {
+    // 如果最新会话为空，直接切换到最新会话而不是创建新会话
+    conversationStore.switchToLatestConversation();
+    return;
+  }
+
   conversationStore.createConversation({
     title: `新对话 ${conversationStore.conversationCount + 1}`,
     group: "recent",

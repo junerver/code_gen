@@ -230,7 +230,7 @@ const handleConversationCreate = (): void => {
   }
 
   conversationStore.createConversation({
-    title: `新对话 ${conversationStore.conversationCount + 1}`,
+    title: `新对话`,
     group: "recent",
   });
   ElMessage.success("已创建新对话");

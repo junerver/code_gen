@@ -34,6 +34,12 @@ export const useChat = () => {
 			conversationStore.initializeDefaultConversation();
 		}
 
+		// 检查是否为该会话的第一条消息
+		const currentMessages = conversationStore.getMessages(
+			conversationStore.activeConversationId,
+		);
+		const isFirstMessage = currentMessages.length === 0;
+
 		const message: ChatMessage = {
 			id: generateMessageId(),
 			content,
@@ -44,6 +50,17 @@ export const useChat = () => {
 			conversationStore.activeConversationId,
 			message,
 		);
+
+		// 如果是第一条消息，更新会话标题
+		if (isFirstMessage) {
+			// 截取前30个字符作为标题，避免标题过长
+			const title =
+				content.length > 30 ? content.slice(0, 30) + "..." : content;
+			conversationStore.updateConversation(
+				conversationStore.activeConversationId,
+				{ title },
+			);
+		}
 	};
 
 	/**

@@ -1,14 +1,21 @@
-import { ref, readonly } from "vue";
+import { ref, readonly, computed } from "vue";
 import type { ChatMessage } from "~/types/chat";
+import { useConversationStore } from "~/stores/conversation";
 
 /**
  * 聊天功能组合式函数
  * @returns 聊天相关的状态和方法
  */
 export const useChat = () => {
-	const messages = ref<ChatMessage[]>([]);
+	const conversationStore = useConversationStore();
 	const loading = ref(false);
 	const error = ref<string | undefined>();
+
+	// 从store获取当前会话的消息
+	const messages = computed(() => conversationStore.activeMessages);
+	const activeConversation = computed(
+		() => conversationStore.activeConversation,
+	);
 
 	/**
 	 * 生成消息ID
@@ -19,49 +26,59 @@ export const useChat = () => {
 	};
 
 	/**
-	 * 添加用户消息
+	 * 添加用户消息到当前会话
 	 * @param content 消息内容
 	 */
 	const addUserMessage = (content: string): void => {
+		if (!conversationStore.activeConversationId) {
+			conversationStore.initializeDefaultConversation();
+		}
+
 		const message: ChatMessage = {
 			id: generateMessageId(),
 			content,
 			role: "user",
 			timestamp: new Date(),
 		};
-		messages.value.push(message);
+		conversationStore.addMessage(
+			conversationStore.activeConversationId,
+			message,
+		);
 	};
 
 	/**
-	 * 添加助手消息
+	 * 添加助手消息到当前会话
 	 * @param content 消息内容
 	 */
 	const addAssistantMessage = (content: string): void => {
+		if (!conversationStore.activeConversationId) {
+			conversationStore.initializeDefaultConversation();
+		}
+
 		const message: ChatMessage = {
 			id: generateMessageId(),
 			content,
 			role: "assistant",
 			timestamp: new Date(),
 		};
-		messages.value.push(message);
+		conversationStore.addMessage(
+			conversationStore.activeConversationId,
+			message,
+		);
 	};
 
 	/**
-	 * 更新助手消息内容
+	 * 更新当前会话中的助手消息内容
 	 * @param messageId 消息ID
 	 * @param content 新的消息内容
 	 */
 	const updateAssistantMessage = (messageId: string, content: string): void => {
-		const messageIndex = messages.value.findIndex(
-			(msg) => msg.id === messageId,
-		);
-		if (messageIndex > -1) {
-			if (messages.value[messageIndex]) {
-				if (messages.value[messageIndex].loading) {
-					messages.value[messageIndex].loading = false;
-				}
-				messages.value[messageIndex].content = content;
-			}
+		if (conversationStore.activeConversationId) {
+			conversationStore.updateMessage(
+				conversationStore.activeConversationId,
+				messageId,
+				content,
+			);
 		}
 	};
 
@@ -145,13 +162,21 @@ export const useChat = () => {
 			console.error("发送消息失败:", err);
 
 			// 如果出错，移除最后添加的空助手消息
-			const lastMessage = messages.value[messages.value.length - 1];
-			if (
-				messages.value.length > 0 &&
-				lastMessage?.role === "assistant" &&
-				lastMessage?.content === ""
-			) {
-				messages.value.pop();
+			if (conversationStore.activeConversationId) {
+				const currentMessages = conversationStore.getMessages(
+					conversationStore.activeConversationId,
+				);
+				const lastMessage = currentMessages[currentMessages.length - 1];
+				if (
+					currentMessages.length > 0 &&
+					lastMessage?.role === "assistant" &&
+					lastMessage?.content === ""
+				) {
+					conversationStore.deleteMessage(
+						conversationStore.activeConversationId,
+						lastMessage.id,
+					);
+				}
 			}
 		} finally {
 			loading.value = false;
@@ -159,29 +184,37 @@ export const useChat = () => {
 	};
 
 	/**
-	 * 清空聊天记录
+	 * 清空当前会话的聊天记录
 	 */
 	const clearMessages = (): void => {
-		messages.value = [];
+		if (conversationStore.activeConversationId) {
+			conversationStore.clearMessages(conversationStore.activeConversationId);
+		}
 		error.value = undefined;
 	};
 
 	/**
-	 * 删除指定消息
+	 * 删除当前会话中的指定消息
 	 * @param messageId 消息ID
 	 */
 	const deleteMessage = (messageId: string): void => {
-		const index = messages.value.findIndex((msg) => msg.id === messageId);
-		if (index > -1) {
-			messages.value.splice(index, 1);
+		if (conversationStore.activeConversationId) {
+			conversationStore.deleteMessage(
+				conversationStore.activeConversationId,
+				messageId,
+			);
 		}
 	};
 
 	return {
 		// 只读状态
-		messages: readonly(messages),
+		messages,
+		activeConversation,
 		loading: readonly(loading),
 		error: readonly(error),
+
+		// 会话store引用
+		conversationStore,
 
 		// 方法
 		sendMessage,

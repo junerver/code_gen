@@ -36,7 +36,7 @@
         <div class="header-content">
           <h2 class="chat-title">
             <el-icon>
-              <ChatDotRound/>
+              <ChatDotRound />
             </el-icon>
             AI代码生成助手
           </h2>
@@ -62,7 +62,7 @@
             <el-empty description="开始您的第一次对话吧！">
               <template #image>
                 <el-icon size="64" color="#409eff">
-                  <ChatDotRound/>
+                  <ChatDotRound />
                 </el-icon>
               </template>
             </el-empty>
@@ -104,47 +104,61 @@
 </template>
 
 <script setup lang="ts">
-import {ref, onMounted, computed} from "vue";
-import {ChatDotRound, Delete, Plus} from "@element-plus/icons-vue";
-import {ElMessage, ElMessageBox} from "element-plus";
-import {BubbleList, Conversations, Sender} from "vue-element-plus-x";
-import {useChat} from "~/composables/useChat";
-import type {TypewriterProps} from "vue-element-plus-x/types/Typewriter";
-import type {BubbleProps} from "vue-element-plus-x/types/Bubble";
+import { ref, onMounted, computed, nextTick } from "vue";
+import { ChatDotRound, Delete, Plus } from "@element-plus/icons-vue";
+import { ElMessage, ElMessageBox } from "element-plus";
+import { BubbleList, Conversations, Sender } from "vue-element-plus-x";
+import { useChat } from "~/composables/useChat";
+import type { TypewriterProps } from "vue-element-plus-x/types/Typewriter";
+import type { BubbleProps } from "vue-element-plus-x/types/Bubble";
 import type {
   ConversationItem,
   ConversationMenuCommand,
 } from "vue-element-plus-x/types/Conversations";
-
-
+import type { Conversation } from "~/types/conversation";
 
 // 修改 title
 useHead({
   title: "AI代码生成助手",
 });
 
-
-// 会话管理相关数据
-interface Conversation {
-  id: string;
-  label: string;
-  group?: string;
-  disabled?: boolean;
-  lastMessage?: string;
-  timestamp: Date;
-}
-
 // 使用聊天功能
-const {messages, loading, error, sendMessage, clearMessages} = useChat();
-
-// 移除了useFetch，现在直接在useChat中处理API调用
+const {
+  messages,
+  loading,
+  error,
+  sendMessage,
+  clearMessages,
+  conversationStore,
+} = useChat();
 
 // 响应式数据
 const inputMessage = ref("");
 const messagesContainer = ref<HTMLElement>();
-const conversations = ref<ConversationItem<Conversation>[]>([]);
-const activeConversation = ref<string>("");
 const bubbleListRef = ref();
+
+// 从store获取会话相关数据
+const conversations = computed<ConversationItem<Conversation>[]>(() => {
+  return conversationStore.conversations.map((conv) => ({
+    // 直接展开 conv 对象,避免重复指定 id
+    ...conv,
+    label: conv.title,
+    group: conv.group,
+    disabled: conv.disabled,
+    lastMessage: conv.lastMessage,
+    timestamp: conv.updatedAt,
+    ...conv,
+  }));
+});
+
+const activeConversation = computed({
+  get: () => conversationStore.activeConversationId,
+  set: (value: string) => {
+    if (value) {
+      conversationStore.setActiveConversation(value);
+    }
+  },
+});
 
 // 头像配置
 const userAvatar = "https://avatars.githubusercontent.com/u/76239030?v=4";
@@ -160,7 +174,7 @@ const formattedMessages = computed<BubbleProps[]>(() => {
     const placement = isUser ? "end" : "start";
     const typing: TypewriterProps["typing"] = isUser
       ? false
-      : {step: 5, interval: 35};
+      : { step: 5, interval: 35 };
     return {
       ...message,
       placement,
@@ -195,58 +209,90 @@ const handleSendMessage = async (message?: string): Promise<void> => {
 const handleConversationSelect = (
   item: ConversationItem<Conversation>
 ): void => {
-  activeConversation.value = item.id;
-  // 这里可以加载对应会话的消息
-  ElMessage.info(`切换到会话: ${item.label}`);
+  conversationStore.setActiveConversation(item.id);
+  ElMessage.success(`已切换到: ${item.label}`);
+  // 滚动到底部显示最新消息
+  nextTick(() => {
+    scrollToBottom();
+  });
 };
 
 /**
  * 处理创建新会话
  */
 const handleConversationCreate = (): void => {
-  const newConversation: ConversationItem<Conversation> = {
-    id: `conv_${Date.now()}`,
-    label: `新对话 ${conversations.value.length + 1}`,
+  conversationStore.createConversation({
+    title: `新对话 ${conversationStore.conversationCount + 1}`,
     group: "recent",
-    timestamp: new Date(),
-  };
-  conversations.value.unshift(newConversation);
-  activeConversation.value = newConversation.id;
-  clearMessages();
+  });
   ElMessage.success("已创建新对话");
+  // 滚动到底部
+  nextTick(() => {
+    scrollToBottom();
+  });
 };
 
-// 内置菜单点击方法
+/**
+ * 内置菜单点击方法
+ * @param command 菜单命令
+ * @param item 会话项
+ */
 function handleMenuCommand(
   command: ConversationMenuCommand,
   item: ConversationItem<Conversation>
 ) {
-  console.log("内置菜单点击事件：", command, item);
-  // 直接修改 item 是否生效
   if (command === "delete") {
-    const index = conversations.value.findIndex(
-      (itemSlef) => itemSlef.id === item.id
-    );
-
-    if (index !== -1) {
-      conversations.value.splice(index, 1);
-      console.log("删除成功");
-      ElMessage.success("删除成功");
-    }
+    ElMessageBox.confirm(
+      `确定要删除会话 "${item.label}" 吗？此操作不可恢复。`,
+      "确认删除",
+      {
+        confirmButtonText: "确定",
+        cancelButtonText: "取消",
+        type: "warning",
+      }
+    )
+      .then(() => {
+        conversationStore.deleteConversation(item.id);
+        ElMessage.success("会话已删除");
+      })
+      .catch(() => {
+        // 用户取消
+      });
   }
+
   if (command === "rename") {
-    item.label = "已修改";
-    console.log("重命名成功");
-    ElMessage.success("重命名成功");
+    ElMessageBox.prompt("请输入新的会话名称", "重命名会话", {
+      confirmButtonText: "确定",
+      cancelButtonText: "取消",
+      inputValue: item.label,
+      inputValidator: (value: string) => {
+        if (!value || !value.trim()) {
+          return "会话名称不能为空";
+        }
+        return true;
+      },
+    })
+      .then(({ value }) => {
+        conversationStore.updateConversation(item.id, { title: value.trim() });
+        ElMessage.success("重命名成功");
+      })
+      .catch(() => {
+        // 用户取消
+      });
   }
 }
 
 /**
- * 处理清空聊天
+ * 处理清空当前会话聊天记录
  */
 const handleClearChat = (): void => {
+  if (!conversationStore.activeConversation) {
+    ElMessage.warning("没有活跃的会话");
+    return;
+  }
+
   ElMessageBox.confirm(
-    "确定要清空所有对话记录吗？此操作不可恢复。",
+    `确定要清空会话 "${conversationStore.activeConversation.title}" 的所有对话记录吗？此操作不可恢复。`,
     "确认清空",
     {
       confirmButtonText: "确定",
@@ -272,9 +318,15 @@ const scrollToBottom = async (): Promise<void> => {
 
 // 组件挂载时初始化
 onMounted(() => {
-  // 创建默认会话
-  handleConversationCreate();
-  scrollToBottom();
+  // 如果没有会话，创建默认会话
+  if (conversationStore.conversationCount === 0) {
+    conversationStore.initializeDefaultConversation();
+  }
+
+  // 滚动到底部
+  nextTick(() => {
+    scrollToBottom();
+  });
 });
 </script>
 

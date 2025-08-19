@@ -116,11 +116,9 @@ import type {
   ConversationMenuCommand,
 } from "vue-element-plus-x/types/Conversations";
 
-// 使用 NuxtJS 提供的请求钩子
-const { data } = await useFetch("/api/chat",{method: "POST"});
 // 修改 title
 useHead({
-  title: 'AI代码生成助手',
+  title: "AI代码生成助手",
 });
 
 // 会话管理相关数据

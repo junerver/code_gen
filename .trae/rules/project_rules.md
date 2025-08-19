@@ -6,11 +6,20 @@
 
 ## 技术栈
 
+前端技术栈：
+
 - **前端框架**: Nuxt.js 4 + Vue 3
 - **UI组件库**: Element Plus (vue-element-plus-x)
 - **代码规范**: ESLint
 - **包管理器**: pnpm
-- **开发工具**: Nuxt DevTools
+- **开发工具**: Nuxt DevTools、Storybook、TypeScript
+
+后端技术栈：
+
+- 数据库 ：MongoDB + Mongoose
+- AI集成 ：Vercel AI SDK
+- API路由 ：Next.js API Routes
+- 数据验证 ：Zod
 
 ## 目录结构规范
 
@@ -329,6 +338,18 @@ feat(chat): 添加代码生成功能
 4. **团队协作**: 保持良好的沟通和代码审查习惯
 5. **安全第一**: 始终将安全性放在首位
 
----
 
-本规范将随着项目发展不断完善和更新。所有团队成员都应严格遵守这些规范，以确保项目的高质量和可维护性。
+## 项目目标
+
+1. 可定制化代码生成器（Codegen）
+- 技术栈定制 ：支持React、Vue、HTML等框架
+- 组件库定制 ：支持Mui、Antd、Element-Plus、Shadcn UI等主流组件库
+- 场景定制 ：支持Landing Pages、邮件模板、管理系统、APP原型等
+- 代码规范定制 ：可自定义代码文件结构、样式方案等
+- AI模型定制 ：支持OpenAI、Claude、DeepSeek、Ollama等多种AI模型 
+ 
+2. 基础功能
+- 文本/图片转代码 ：支持通过文本描述或图片生成组件代码
+- 代码版本迭代 ：支持查看历史版本，基于任意版本生成新代码
+- 在线代码调优 ：集成代码编辑器，支持实时代码调整和保存
+- 实时代码预览 ：内置预览沙盒环境，支持秒级渲染

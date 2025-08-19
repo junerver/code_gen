@@ -36,7 +36,7 @@
         <div class="header-content">
           <h2 class="chat-title">
             <el-icon>
-              <ChatDotRound />
+              <ChatDotRound/>
             </el-icon>
             AI代码生成助手
           </h2>
@@ -62,7 +62,7 @@
             <el-empty description="开始您的第一次对话吧！">
               <template #image>
                 <el-icon size="64" color="#409eff">
-                  <ChatDotRound />
+                  <ChatDotRound/>
                 </el-icon>
               </template>
             </el-empty>
@@ -104,22 +104,25 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from "vue";
-import { ChatDotRound, Delete, Plus } from "@element-plus/icons-vue";
-import { ElMessage, ElMessageBox } from "element-plus";
-import { BubbleList, Conversations, Sender } from "vue-element-plus-x";
-import { useChat } from "~/composables/useChat";
-import type { TypewriterProps } from "vue-element-plus-x/types/Typewriter";
-import type { BubbleProps } from "vue-element-plus-x/types/Bubble";
+import {ref, onMounted, computed} from "vue";
+import {ChatDotRound, Delete, Plus} from "@element-plus/icons-vue";
+import {ElMessage, ElMessageBox} from "element-plus";
+import {BubbleList, Conversations, Sender} from "vue-element-plus-x";
+import {useChat} from "~/composables/useChat";
+import type {TypewriterProps} from "vue-element-plus-x/types/Typewriter";
+import type {BubbleProps} from "vue-element-plus-x/types/Bubble";
 import type {
   ConversationItem,
   ConversationMenuCommand,
 } from "vue-element-plus-x/types/Conversations";
 
+
+
 // 修改 title
 useHead({
   title: "AI代码生成助手",
 });
+
 
 // 会话管理相关数据
 interface Conversation {
@@ -132,7 +135,12 @@ interface Conversation {
 }
 
 // 使用聊天功能
-const { messages, loading, error, sendMessage, clearMessages } = useChat();
+const {messages, loading, error, sendMessage, clearMessages} = useChat();
+
+// 使用 NuxtJS 提供的请求钩子
+const {execute} = await useFetch("/api/chat", {method: "POST", lazy: true, immediate: false,body:{
+    messages:messages
+  }});
 
 // 响应式数据
 const inputMessage = ref("");
@@ -155,7 +163,7 @@ const formattedMessages = computed<BubbleProps[]>(() => {
     const placement = isUser ? "end" : "start";
     const typing: TypewriterProps["typing"] = isUser
       ? false
-      : { step: 5, interval: 35 };
+      : {step: 5, interval: 35};
     return {
       ...message,
       placement,
@@ -180,6 +188,7 @@ const handleSendMessage = async (message?: string): Promise<void> => {
   inputMessage.value = "";
   // 发送消息并获取新消息ID
   await sendMessage(messageContent);
+  execute()
   await scrollToBottom();
 };
 

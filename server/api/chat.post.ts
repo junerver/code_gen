@@ -1,9 +1,9 @@
 /**
  * @Description chat.ts
  * @Author 侯文君
- * @Date 2025/8/18 18:49
+ * @Date 2025-08-18 18:49
  * @LastEditors 侯文君
- * @LastEditTime 18:49
+ * @LastEditTime 2025-08-20 17:17
  */
 
 import { ollama } from "ollama-ai-provider-v2";
@@ -32,6 +32,7 @@ export default defineLazyEventHandler(async () => {
 			6. 遵循ESLint规范，保持代码风格统一
 			7. 组件具有良好的可读性和可维护性
 			8. 使用Element Plus组件，提升UI一致性
+			9. 代码块顺序：template - script - style
 
 			在生成代码时，请深度理解用户需求，并考虑以下方面：
 			- 组件的输入(props)和输出(events)

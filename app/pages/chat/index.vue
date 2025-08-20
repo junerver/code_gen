@@ -77,7 +77,11 @@
             class="bubble-list"
           >
             <template #footer="{ item }">
-              <div class="footer-container"  v-if="item.role === 'assistant' && !item.typing">
+              <div
+                class="footer-container"
+                v-if="item.role === 'assistant' && !item.typing"
+              >
+                <!-- 重新生成 -->
                 <el-button
                   type="info"
                   :icon="Refresh"
@@ -85,11 +89,13 @@
                   circle
                   @click="handleRegenerate(item)"
                 />
+                <!-- 提取组件源码 -->
                 <el-button
                   color="#626aef"
                   :icon="DocumentCopy"
                   size="small"
                   circle
+                  @click="handleExtractCode(item)"
                 />
               </div>
             </template>
@@ -249,6 +255,27 @@ const handleRegenerate = async (item: ChatMessage): Promise<void> => {
     });
 
   await scrollToBottom();
+};
+
+/**
+ * 处理组件源码提取
+ */
+const handleExtractCode = (item: ChatMessage): void => {
+  if (item.role !== "assistant") return;
+  const sourceCode = extractCode(item.content);
+  if (sourceCode) {
+    // 复制到剪贴板
+    navigator.clipboard
+      .writeText(sourceCode)
+      .then(() => {
+        ElMessage.success("源码已复制到剪贴板");
+      })
+      .catch(() => {
+        ElMessage.error("复制失败,请手动复制");
+      });
+  } else {
+    ElMessage.warning("未提取到组件源码");
+  }
 };
 
 /**

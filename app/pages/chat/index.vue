@@ -72,6 +72,7 @@
           <BubbleList
             v-else
             ref="bubbleListRef"
+            max-height="calc(100vh - 200px)"
             :list="formattedMessages"
             class="bubble-list"
           />
@@ -85,6 +86,8 @@
           :disabled="loading"
           :placeholder="'请输入您的问题或代码需求...'"
           class="message-sender"
+          variant="updown"
+          clearable
           @submit="handleSendMessage"
         />
       </el-footer>
@@ -338,10 +341,27 @@ onMounted(() => {
 });
 </script>
 
+<style>
+/* 全局样式重置，防止页面滚动条 */
+html,
+body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  overflow: hidden;
+}
+
+#__nuxt {
+  height: 100vh;
+  overflow: hidden;
+}
+</style>
+
 <style scoped>
 .chat-container {
   height: 100vh;
   display: flex;
+  overflow: hidden;
 }
 
 /* 左侧会话管理面板 */
@@ -387,6 +407,7 @@ onMounted(() => {
   border-bottom: 1px solid #e4e7ed;
   padding: 0 24px;
   height: 70px;
+  flex-shrink: 0;
 }
 
 .header-content {
@@ -410,31 +431,16 @@ onMounted(() => {
   flex: 1;
   padding: 24px;
   overflow: hidden;
+  min-height: 0;
 }
 
 .messages-container {
   height: 100%;
-  overflow-y: auto;
+  overflow: hidden;
   padding-right: 8px;
 }
 
-.messages-container::-webkit-scrollbar {
-  width: 6px;
-}
-
-.messages-container::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 3px;
-}
-
-.messages-container::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.3);
-  border-radius: 3px;
-}
-
-.messages-container::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.5);
-}
+/* 移除messages-container的滚动条样式，让BubbleList自己处理滚动 */
 
 .empty-state {
   height: 100%;
@@ -470,7 +476,8 @@ onMounted(() => {
   backdrop-filter: blur(10px);
   border-top: 1px solid #e4e7ed;
   padding: 24px;
-  height: auto;
+  height: 120px;
+  flex-shrink: 0;
 }
 
 .message-sender {

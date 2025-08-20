@@ -79,12 +79,12 @@
             <template #footer="{ item }">
               <div class="footer-container">
                 <el-button
-                  v-if="(item as any).role === 'assistant' && !item.typing"
+                  v-if="item.role === 'assistant' && !item.typing"
                   type="info"
                   :icon="Refresh"
                   size="small"
                   circle
-                  @click="handleRegenerate(item as any)"
+                  @click="handleRegenerate(item)"
                 />
               </div>
             </template>
@@ -125,7 +125,6 @@ import { ChatDotRound, Delete, Plus, Refresh } from "@element-plus/icons-vue";
 import { ElMessage, ElMessageBox } from "element-plus";
 import { BubbleList, Conversations, Sender } from "vue-element-plus-x";
 import { useChat } from "~/composables/useChat";
-import type { BubbleProps } from "vue-element-plus-x/types/Bubble";
 import type {
   ConversationItem,
   ConversationMenuCommand,
@@ -183,12 +182,11 @@ const assistantAvatar =
   "https://cube.elemecdn.com/9/c2/f0ee8a3c7c9638a54940382568c9dpng.png";
 
 // 格式化消息数据，将存储在内存中的数据转换成 BubbleList 组件需要的数据结构
-const formattedMessages = computed<BubbleProps[]>(() => {
+const formattedMessages = computed<ChatMessage[]>(() => {
   return messages.value.map((message) => {
     const isUser = message.role === "user";
     const variant = !isUser ? "filled" : "outlined";
     const placement = isUser ? "end" : "start";
-    console.log("format message: ", {...message});
     return {
       ...message,
       placement,
@@ -249,7 +247,7 @@ const handleRegenerate = async (item: ChatMessage): Promise<void> => {
 const handleConversationSelect = (
   item: ConversationItem<Conversation>
 ): void => {
-  if (item.id === activeConversation.value) return
+  if (item.id === activeConversation.value) return;
   conversationStore.setActiveConversation(item.id);
   ElMessage.success(`已切换到: ${item.label}`);
   // 滚动到底部显示最新消息

@@ -13,5 +13,4 @@ export type ChatMessage = BubbleProps & {
 	// 消息的角色
 	role: "user" | "assistant" | "system";
 	timestamp: Date;
-	avatar?: string;
 };

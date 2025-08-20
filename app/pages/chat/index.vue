@@ -79,7 +79,7 @@
             <template #footer="{ item }">
               <div class="footer-container">
                 <el-button
-                  v-if="(item as any).role === 'assistant'"
+                  v-if="(item as any).role === 'assistant' && !item.typing"
                   type="info"
                   :icon="Refresh"
                   size="small"
@@ -186,20 +186,16 @@ const assistantAvatar =
 const formattedMessages = computed<BubbleProps[]>(() => {
   return messages.value.map((message) => {
     const isUser = message.role === "user";
-    const shape = "corner";
     const variant = !isUser ? "filled" : "outlined";
     const placement = isUser ? "end" : "start";
-    console.log("typing", message.typing);
-
+    console.log("format message: ", {...message});
     return {
       ...message,
       placement,
       avatar: isUser ? userAvatar : assistantAvatar,
       avatarSize: "32px",
-      shape,
       variant,
       maxWidth: isUser ? "500px" : "900px",
-      isMarkdown: isUser ? false : true,
     };
   });
 });
@@ -253,6 +249,7 @@ const handleRegenerate = async (item: ChatMessage): Promise<void> => {
 const handleConversationSelect = (
   item: ConversationItem<Conversation>
 ): void => {
+  if (item.id === activeConversation.value) return
   conversationStore.setActiveConversation(item.id);
   ElMessage.success(`已切换到: ${item.label}`);
   // 滚动到底部显示最新消息
@@ -493,22 +490,6 @@ body {
 .bubble-list {
   height: 100%;
   animation: fadeInUp 0.3s ease-out;
-}
-
-.typing-indicator span {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: currentColor;
-  animation: typing 1.4s infinite ease-in-out;
-}
-
-.typing-indicator span:nth-child(1) {
-  animation-delay: -0.32s;
-}
-
-.typing-indicator span:nth-child(2) {
-  animation-delay: -0.16s;
 }
 
 .chat-footer {

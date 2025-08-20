@@ -143,11 +143,13 @@ export const useConversationStore = defineStore("conversation", () => {
 	 * @param conversationId 会话ID
 	 * @param messageId 消息ID
 	 * @param content 新内容
+	 * @param done 是否完成
 	 */
 	const updateMessage = (
 		conversationId: string,
 		messageId: string,
 		content: string,
+		done: boolean = false,
 	): void => {
 		const messages = conversationMessages.value.get(conversationId) || [];
 		const messageIndex = messages.findIndex((msg) => msg.id === messageId);
@@ -158,8 +160,8 @@ export const useConversationStore = defineStore("conversation", () => {
 				if (message.loading) {
 					message.loading = false;
 				}
-				// 当内容更新时，设置typing为false（表示打字完成）
-				if (message.typing) {
+				if (done) {
+					// 完成时取消打字机
 					message.typing = false;
 				}
 			}

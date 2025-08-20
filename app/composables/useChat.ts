@@ -45,6 +45,9 @@ export const useChat = () => {
 			content,
 			role: "user",
 			timestamp: new Date(),
+			typing: false,
+			isMarkdown: false,
+			shape: "corner",
 		};
 		conversationStore.addMessage(
 			conversationStore.activeConversationId,
@@ -67,7 +70,7 @@ export const useChat = () => {
 	 * 添加助手消息到当前会话
 	 * @param content 消息内容
 	 */
-	const addAssistantMessage = (content: string): void => {
+	const addAssistantMessage = (content: string = ""): string => {
 		if (!conversationStore.activeConversationId) {
 			conversationStore.initializeDefaultConversation();
 		}
@@ -77,11 +80,15 @@ export const useChat = () => {
 			content,
 			role: "assistant",
 			timestamp: new Date(),
+			typing: { step: 5, interval: 35, suffix: "|" },
+			isMarkdown: true,
+			shape: "corner",
 		};
 		conversationStore.addMessage(
 			conversationStore.activeConversationId,
 			message,
 		);
+		return message.id;
 	};
 
 	/**
@@ -89,12 +96,17 @@ export const useChat = () => {
 	 * @param messageId 消息ID
 	 * @param content 新的消息内容
 	 */
-	const updateAssistantMessage = (messageId: string, content: string): void => {
+	const updateAssistantMessage = (
+		messageId: string,
+		content: string,
+		done: boolean = false,
+	): void => {
 		if (conversationStore.activeConversationId) {
 			conversationStore.updateMessage(
 				conversationStore.activeConversationId,
 				messageId,
 				content,
+				done,
 			);
 		}
 	};
@@ -159,13 +171,7 @@ export const useChat = () => {
 		}
 
 		// 流式响应完成，确保typing状态被设置为false
-		if (conversationStore.activeConversationId) {
-			conversationStore.updateMessage(
-				conversationStore.activeConversationId,
-				assistantMessageId,
-				accumulatedContent,
-			);
-		}
+		updateAssistantMessage(assistantMessageId, accumulatedContent, true);
 
 		return accumulatedContent;
 	};
@@ -185,16 +191,7 @@ export const useChat = () => {
 			addUserMessage(content);
 
 			// 创建助手消息占位符
-			const assistantMessageId = generateMessageId();
-			const assistantMessage: ChatMessage = {
-				id: assistantMessageId,
-				content: "",
-				role: "assistant",
-				timestamp: new Date(),
-				loading: true,
-				typing: { step: 5, interval: 35 },
-			};
-			messages.value.push(assistantMessage);
+			const assistantMessageId = addAssistantMessage();
 
 			// 生成回复
 			await generateResponse(assistantMessageId);
@@ -221,6 +218,7 @@ export const useChat = () => {
 							conversationStore.activeConversationId,
 							lastMessage.id,
 							lastMessage.content,
+							true,
 						);
 					}
 				}
@@ -264,19 +262,7 @@ export const useChat = () => {
 			}
 
 			// 创建新的助手消息占位符
-			const assistantMessageId = generateMessageId();
-			const assistantMessage: ChatMessage = {
-				id: assistantMessageId,
-				content: "",
-				role: "assistant",
-				timestamp: new Date(),
-				loading: true,
-				typing: true,
-			};
-			conversationStore.addMessage(
-				conversationStore.activeConversationId,
-				assistantMessage,
-			);
+			const assistantMessageId = addAssistantMessage();
 
 			// 生成新的回复
 			await generateResponse(assistantMessageId);

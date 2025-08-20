@@ -83,6 +83,7 @@ export const useChat = () => {
 			typing: { step: 5, interval: 35, suffix: "|" },
 			isMarkdown: true,
 			shape: "corner",
+			loading: true,
 		};
 		conversationStore.addMessage(
 			conversationStore.activeConversationId,

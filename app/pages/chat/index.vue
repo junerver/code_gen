@@ -77,14 +77,19 @@
             class="bubble-list"
           >
             <template #footer="{ item }">
-              <div class="footer-container">
+              <div class="footer-container"  v-if="item.role === 'assistant' && !item.typing">
                 <el-button
-                  v-if="item.role === 'assistant' && !item.typing"
                   type="info"
                   :icon="Refresh"
                   size="small"
                   circle
                   @click="handleRegenerate(item)"
+                />
+                <el-button
+                  color="#626aef"
+                  :icon="DocumentCopy"
+                  size="small"
+                  circle
                 />
               </div>
             </template>
@@ -121,7 +126,13 @@
 
 <script setup lang="ts">
 import { ref, onMounted, computed, nextTick } from "vue";
-import { ChatDotRound, Delete, Plus, Refresh } from "@element-plus/icons-vue";
+import {
+  ChatDotRound,
+  Delete,
+  Plus,
+  Refresh,
+  DocumentCopy,
+} from "@element-plus/icons-vue";
 import { ElMessage, ElMessageBox } from "element-plus";
 import { BubbleList, Conversations, Sender } from "vue-element-plus-x";
 import { useChat } from "~/composables/useChat";
@@ -488,6 +499,12 @@ body {
 .bubble-list {
   height: 100%;
   animation: fadeInUp 0.3s ease-out;
+}
+
+.footer-container {
+  :deep(.el-button + .el-button) {
+    margin-left: 8px;
+  }
 }
 
 .chat-footer {

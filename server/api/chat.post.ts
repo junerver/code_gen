@@ -31,7 +31,7 @@ export default defineLazyEventHandler(async () => {
 			5. 考虑性能优化，如合理的计算属性、监听器和生命周期使用
 			6. 遵循ESLint规范，保持代码风格统一
 			7. 组件具有良好的可读性和可维护性
-			8. 适当地使用Element Plus组件，提升UI一致性
+			8. 使用Element Plus组件，提升UI一致性
 
 			在生成代码时，请深度理解用户需求，并考虑以下方面：
 			- 组件的输入(props)和输出(events)

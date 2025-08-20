@@ -37,7 +37,6 @@ export default defineLazyEventHandler(async () => {
 			- 组件的输入(props)和输出(events)
 			- 状态管理(reactive, ref)
 			- 生命周期钩子的合理使用
-			- 异步操作处理(如API调用)
 			- 表单验证(如适用)
 			- 响应式设计适配
 

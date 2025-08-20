@@ -1,9 +1,9 @@
 /**
- * @Description chat.ts
+ * @Description 用于提取代码的工具函数
  * @Author 侯文君
  * @Date 2025-08-20 16:45
  * @LastEditors 侯文君
- * @LastEditTime 2025-08-20 17:21
+ * @LastEditTime 2025-08-21 13:14
  */
 
 /**
@@ -11,7 +11,7 @@
  * @param content 包含代码块的文本内容
  * @param language 可选的语言标识，如果指定则只匹配该语言的代码块
  * @param index 可选的索引，指定提取第几个代码块（从0开始），默认为0
- * @returns 提取到的代码内容
+ * @returns 提取到的代码内容，如果没有提取到代码块，则返回原始内容
  */
 export const extractCode = (
 	content: string,
@@ -25,7 +25,7 @@ export const extractCode = (
 
 	const matches = content.match(codeRegex);
 	if (!matches || matches.length <= index) {
-		return "";
+		return content;
 	}
 
 	// 提取指定索引的代码块中的实际代码内容

@@ -15,5 +15,5 @@ export interface ChatMessage {
 	// 气泡加载状态
 	loading?: boolean;
 	// 打字机效果状态
-	typing?: boolean;
+	typing?: boolean | object;
 }

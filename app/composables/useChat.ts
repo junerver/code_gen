@@ -100,6 +100,77 @@ export const useChat = () => {
 	};
 
 	/**
+	 * 生成AI回复的核心逻辑
+	 * @param assistantMessageId 助手消息ID
+	 * @returns 生成的回复内容
+	 */
+	const generateResponse = async (
+		assistantMessageId: string,
+	): Promise<string> => {
+		// 调用流式API
+		const response = await fetch("/api/chat", {
+			method: "POST",
+			headers: {
+				"Content-Type": "application/json",
+			},
+			body: JSON.stringify({
+				messages: messages.value.map((msg) => ({
+					role: msg.role,
+					content: msg.content,
+				})),
+			}),
+		});
+
+		if (!response.ok) {
+			throw new Error(`HTTP error! status: ${response.status}`);
+		}
+
+		const reader = response.body?.getReader();
+		if (!reader) {
+			throw new Error("无法获取响应流");
+		}
+
+		const decoder = new TextDecoder();
+		let accumulatedContent = "";
+
+		while (true) {
+			const { done, value } = await reader.read();
+			if (done) break;
+
+			const chunk = decoder.decode(value, { stream: true });
+			const lines = chunk.split("\n");
+
+			for (const line of lines) {
+				if (line.startsWith("data: ") && !line.includes("[DONE]")) {
+					try {
+						const jsonStr = line.slice(6); // 移除 'data: ' 前缀
+						const data = JSON.parse(jsonStr);
+
+						// 处理ollama的text-delta类型数据
+						if (data.type === "text-delta" && data.delta) {
+							accumulatedContent += data.delta;
+							updateAssistantMessage(assistantMessageId, accumulatedContent);
+						}
+					} catch (parseError) {
+						console.warn("解析流数据失败:", parseError, "原始行:", line);
+					}
+				}
+			}
+		}
+
+		// 流式响应完成，确保typing状态被设置为false
+		if (conversationStore.activeConversationId) {
+			conversationStore.updateMessage(
+				conversationStore.activeConversationId,
+				assistantMessageId,
+				accumulatedContent,
+			);
+		}
+
+		return accumulatedContent;
+	};
+
+	/**
 	 * 发送消息
 	 * @param content 消息内容
 	 */
@@ -121,72 +192,97 @@ export const useChat = () => {
 				role: "assistant",
 				timestamp: new Date(),
 				loading: true,
-				typing: true,
+				typing: { step: 5, interval: 35 },
 			};
 			messages.value.push(assistantMessage);
 
-			// 调用流式API
-			const response = await fetch("/api/chat", {
-				method: "POST",
-				headers: {
-					"Content-Type": "application/json",
-				},
-				body: JSON.stringify({
-					messages: messages.value.map((msg) => ({
-						role: msg.role,
-						content: msg.content,
-					})),
-				}),
-			});
-
-			if (!response.ok) {
-				throw new Error(`HTTP error! status: ${response.status}`);
-			}
-
-			const reader = response.body?.getReader();
-			if (!reader) {
-				throw new Error("无法获取响应流");
-			}
-
-			const decoder = new TextDecoder();
-			let accumulatedContent = "";
-
-			while (true) {
-				const { done, value } = await reader.read();
-				if (done) break;
-
-				const chunk = decoder.decode(value, { stream: true });
-				const lines = chunk.split("\n");
-
-				for (const line of lines) {
-					if (line.startsWith("data: ") && !line.includes("[DONE]")) {
-						try {
-							const jsonStr = line.slice(6); // 移除 'data: ' 前缀
-							const data = JSON.parse(jsonStr);
-
-							// 处理ollama的text-delta类型数据
-							if (data.type === "text-delta" && data.delta) {
-								accumulatedContent += data.delta;
-								updateAssistantMessage(assistantMessageId, accumulatedContent);
-							}
-						} catch (parseError) {
-							console.warn("解析流数据失败:", parseError, "原始行:", line);
-						}
-					}
-				}
-			}
-
-			// 流式响应完成，确保typing状态被设置为false
-			if (conversationStore.activeConversationId) {
-				conversationStore.updateMessage(
-					conversationStore.activeConversationId,
-					assistantMessageId,
-					accumulatedContent,
-				);
-			}
+			// 生成回复
+			await generateResponse(assistantMessageId);
 		} catch (err) {
 			error.value = err instanceof Error ? err.message : "发送消息失败";
 			console.error("发送消息失败:", err);
+
+			// 如果出错，处理助手消息状态
+			if (conversationStore.activeConversationId) {
+				const currentMessages = conversationStore.getMessages(
+					conversationStore.activeConversationId,
+				);
+				const lastMessage = currentMessages[currentMessages.length - 1];
+				if (currentMessages.length > 0 && lastMessage?.role === "assistant") {
+					if (lastMessage.content === "") {
+						// 如果消息为空，删除消息
+						conversationStore.deleteMessage(
+							conversationStore.activeConversationId,
+							lastMessage.id,
+						);
+					} else {
+						// 如果消息有内容，确保typing和loading状态为false
+						conversationStore.updateMessage(
+							conversationStore.activeConversationId,
+							lastMessage.id,
+							lastMessage.content,
+						);
+					}
+				}
+			}
+		} finally {
+			loading.value = false;
+		}
+	};
+
+	/**
+	 * 重新生成指定消息及其之后的回复
+	 * @param messageId 要重新生成的消息ID
+	 */
+	const regenerate = async (messageId: string): Promise<void> => {
+		if (!conversationStore.activeConversationId) return;
+
+		loading.value = true;
+		error.value = undefined;
+
+		try {
+			// 获取当前会话的所有消息
+			const currentMessages = conversationStore.getMessages(
+				conversationStore.activeConversationId,
+			);
+
+			// 找到指定消息的索引
+			const messageIndex = currentMessages.findIndex(
+				(msg) => msg.id === messageId,
+			);
+			if (messageIndex === -1) {
+				throw new Error("未找到指定的消息");
+			}
+
+			// 删除指定消息及其之后的所有消息
+			const messagesToDelete = currentMessages.slice(messageIndex);
+			for (const msg of messagesToDelete) {
+				conversationStore.deleteMessage(
+					conversationStore.activeConversationId,
+					msg.id,
+				);
+			}
+
+			// 创建新的助手消息占位符
+			const assistantMessageId = generateMessageId();
+			const assistantMessage: ChatMessage = {
+				id: assistantMessageId,
+				content: "",
+				role: "assistant",
+				timestamp: new Date(),
+				loading: true,
+				typing: true,
+			};
+			conversationStore.addMessage(
+				conversationStore.activeConversationId,
+				assistantMessage,
+			);
+
+			// 生成新的回复
+			await generateResponse(assistantMessageId);
+		} catch (err) {
+			error.value = err instanceof Error ? err.message : "重新生成失败";
+			console.error("重新生成失败:", err);
 
 			// 如果出错，处理助手消息状态
 			if (conversationStore.activeConversationId) {
@@ -251,6 +347,7 @@ export const useChat = () => {
 
 		// 方法
 		sendMessage,
+		regenerate,
 		clearMessages,
 		deleteMessage,
 		addUserMessage,

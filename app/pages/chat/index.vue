@@ -75,7 +75,20 @@
             max-height="calc(100vh - 200px)"
             :list="formattedMessages"
             class="bubble-list"
-          />
+          >
+            <template #footer="{ item }">
+              <div class="footer-container">
+                <el-button
+                  v-if="(item as any).role === 'assistant'"
+                  type="info"
+                  :icon="Refresh"
+                  size="small"
+                  circle
+                  @click="handleRegenerate(item as any)"
+                />
+              </div>
+            </template>
+          </BubbleList>
         </div>
       </el-main>
 
@@ -108,17 +121,17 @@
 
 <script setup lang="ts">
 import { ref, onMounted, computed, nextTick } from "vue";
-import { ChatDotRound, Delete, Plus } from "@element-plus/icons-vue";
+import { ChatDotRound, Delete, Plus, Refresh } from "@element-plus/icons-vue";
 import { ElMessage, ElMessageBox } from "element-plus";
 import { BubbleList, Conversations, Sender } from "vue-element-plus-x";
 import { useChat } from "~/composables/useChat";
-import type { TypewriterProps } from "vue-element-plus-x/types/Typewriter";
 import type { BubbleProps } from "vue-element-plus-x/types/Bubble";
 import type {
   ConversationItem,
   ConversationMenuCommand,
 } from "vue-element-plus-x/types/Conversations";
 import type { Conversation } from "~/types/conversation";
+import type { ChatMessage } from "~/types/chat";
 
 // 修改 title
 useHead({
@@ -132,6 +145,7 @@ const {
   error,
   sendMessage,
   clearMessages,
+  regenerate,
   conversationStore,
 } = useChat();
 
@@ -175,10 +189,8 @@ const formattedMessages = computed<BubbleProps[]>(() => {
     const shape = "corner";
     const variant = !isUser ? "filled" : "outlined";
     const placement = isUser ? "end" : "start";
-    // 根据消息的typing字段决定是否显示打字机效果
-    const typing: TypewriterProps["typing"] = message.typing
-      ? { step: 5, interval: 35 }
-      : false;
+    console.log("typing", message.typing);
+
     return {
       ...message,
       placement,
@@ -186,7 +198,6 @@ const formattedMessages = computed<BubbleProps[]>(() => {
       avatarSize: "32px",
       shape,
       variant,
-      typing,
       maxWidth: isUser ? "500px" : "900px",
       isMarkdown: isUser ? false : true,
     };
@@ -203,6 +214,35 @@ const handleSendMessage = async (message?: string): Promise<void> => {
   inputMessage.value = "";
   // 发送消息，现在包含流式处理
   await sendMessage(messageContent);
+  await scrollToBottom();
+};
+
+/**
+ * 处理重新生成消息
+ * @param item 要重新生成的消息项
+ */
+const handleRegenerate = async (item: ChatMessage): Promise<void> => {
+  console.log("重新生成消息", item);
+  if (item.role !== "assistant") return;
+  // 提示重生成将替换当前消息
+  ElMessageBox.confirm(
+    "确认重新生成当前消息吗？这将替换当前消息，且无法撤销。",
+    "确认重新生成",
+    {
+      confirmButtonText: "确定",
+      cancelButtonText: "取消",
+      type: "warning",
+    }
+  )
+    .then(async () => {
+      // 调用重新生成消息的 API
+      await regenerate(item.id);
+      await scrollToBottom();
+    })
+    .catch(() => {
+      // 用户取消
+    });
+
   await scrollToBottom();
 };
 

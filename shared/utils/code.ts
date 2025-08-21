@@ -3,7 +3,7 @@
  * @Author 侯文君
  * @Date 2025-08-20 16:45
  * @LastEditors 侯文君
- * @LastEditTime 2025-08-21 17:35
+ * @LastEditTime 2025-08-21 19:37
  */
 
 /**
@@ -45,23 +45,37 @@ export const extractCode = (
  * @param elementPlusVersion Element Plus 版本号，默认值为 "2.10.7"
  * @returns 可预览的代码字符串
  */
-export const genPreviewCode = (
-	code: string,
-	elementPlusVersion: string = "2.10.7",
-) => {
+export const genPreviewCode = (code: string) => {
 	const { template, script, style } = extractVuePart(code);
-	return `
-	<template>
-	${template}
-	</template>
-	<script setup>
-	${script}
-	</script>
-	<style>
-	@import url("https://unpkg.com/element-plus@${elementPlusVersion}/dist/index.css")
-	${style}
-	</style>
-	`;
+
+	// 检查脚本中是否已经包含 Element Plus 的导入和初始化
+	const hasElementPlusImport =
+		script.includes('from "element-plus"') ||
+		script.includes("from 'element-plus'");
+	const hasSetupElementPlus = script.includes("setupElementPlus");
+
+	// 如果没有 Element Plus 相关的导入，则添加
+	let enhancedScript = script;
+	if (!hasElementPlusImport && !hasSetupElementPlus) {
+		enhancedScript = `import { setupElementPlus } from './element-plus.js'
+
+${script}
+
+// 初始化 Element Plus
+setupElementPlus()`;
+	}
+
+	return `<template>
+${template}
+</template>
+
+<script setup>
+${enhancedScript}
+</script>
+
+<style scoped>
+${style}
+</style>`;
 };
 
 /**

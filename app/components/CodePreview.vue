@@ -8,21 +8,22 @@ const elementPlusVersion = "2.10.7";
 const elementIconVersion = "2.3.2";
 const vueVersion = "3.5.19";
 
-const store = useStore({
-  // 这里必须是 ref
-  vueVersion: ref("3.5.19"),
-
-  builtinImportMap: ref({
+// 生成导入映射
+const generateImportMap = () => {
+  return {
     imports: {
       vue: `https://unpkg.com/vue@${vueVersion}/dist/vue.esm-browser.js`,
       "@vue/shared": `https://unpkg.com/@vue/shared@${vueVersion}/dist/shared.esm-bundler.js`,
-      "element-plus": `https://unpkg.com/element-plus@${elementPlusVersion}/dist/index.full.mjs`,
-      "element-plus/dist/index.css": `https://unpkg.com/element-plus@${elementPlusVersion}/dist/index.css`,
+      "element-plus": `https://unpkg.com/element-plus@${elementPlusVersion}/dist/index.full.min.mjs`,
+      "element-plus/": `https://unpkg.com/element-plus@${elementPlusVersion}/`,
       "@element-plus/icons-vue": `https://unpkg.com/@element-plus/icons-vue@${elementIconVersion}/dist/index.min.js`,
-      "normalize.css": "https://unpkg.com/normalize.css/normalize.css",
     },
-  }),
+  };
+};
 
+const store = useStore({
+  vueVersion: ref(vueVersion),
+  builtinImportMap: ref(generateImportMap()),
   sfcOptions: ref({
     script: {
       propsDestructure: true,
@@ -30,40 +31,74 @@ const store = useStore({
   }),
 });
 
+// 预览选项配置
+const previewOptions = ref({
+  headHTML: `
+    <link rel="stylesheet" href="https://unpkg.com/element-plus@${elementPlusVersion}/dist/index.css">
+    <style>
+      body {
+        margin: 0;
+        padding: 16px;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+      }
+    </style>
+  `,
+  bodyHTML: '<div id="app"></div>',
+});
+
+// Element Plus 初始化代码
+const elementPlusSetup = `import ElementPlus from 'element-plus'
+import { getCurrentInstance } from 'vue'
+
+let installed = false
+await loadStyle()
+
+export function setupElementPlus() {
+  if (installed) return
+  const instance = getCurrentInstance()
+  instance.appContext.app.use(ElementPlus)
+  installed = true
+}
+
+export function loadStyle() {
+  const styles = [
+    'https://unpkg.com/element-plus@${elementPlusVersion}/dist/index.css',
+    'https://unpkg.com/element-plus@${elementPlusVersion}/theme-chalk/dark/css-vars.css'
+  ].map((style) => {
+    return new Promise((resolve, reject) => {
+      const link = document.createElement('link')
+      link.rel = 'stylesheet'
+      link.href = style
+      link.addEventListener('load', resolve)
+      link.addEventListener('error', reject)
+      document.body.append(link)
+    })
+  })
+  return Promise.allSettled(styles)
+}`.replace(/\$\{elementPlusVersion\}/g, elementPlusVersion);
+
 watch(
   componentCode,
   () => {
-    // 设置文件（必须至少有 App.vue）
+    if (!componentCode.value) return;
+
+    // 设置文件
     store.setFiles({
       "App.vue": componentCode.value,
-      "index.html": `<div id="app"></div>`,
-      "main.js": `
-        import ElementPlus from 'element-plus'
-        import { ElIcon } from 'element-plus'
-        import * as ElementPlusIconsVue from '@element-plus/icons-vue'
-        import 'element-plus/dist/index.css'
-        import 'normalize.css'
-        import { createApp } from 'vue'
-        import App from './App.vue'
-
-        const app = createApp(App)
-        app.use(ElementPlus)
-        app.component('ElIcon', ElIcon)
-
-        for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
-          app.component(key, component)
-        }
-
-        app.mount('#app')
-    `,
+      "element-plus.js": elementPlusSetup,
+      "import-map.json": JSON.stringify(generateImportMap(), null, 2),
     });
+
+    // 设置主文件
+    store.mainFile = "App.vue";
+    store.activeFilename = "App.vue";
   },
   { immediate: true }
 );
 
 const openDialog = (code: string) => {
-  const previewCode = genPreviewCode(code, elementPlusVersion);
-  console.log("预览代码1:", previewCode);
+  const previewCode = genPreviewCode(code);
+  console.log("预览代码:", previewCode);
   componentCode.value = previewCode;
   dialogVisible.value = true;
 };
@@ -75,9 +110,19 @@ defineExpose({ openDialog });
   <el-dialog
     v-model="dialogVisible"
     title="组件预览"
-    width="80%"
-    style="height: 600px; overflow: auto"
+    width="90%"
+    style="height: 80vh; overflow: hidden"
+    :close-on-click-modal="false"
+    :close-on-press-escape="false"
   >
-    <Sandbox :store="store" />
+    <div style="height: 70vh; overflow: hidden">
+      <Sandbox
+        :store="store"
+        :preview-options="previewOptions"
+        :show-compile-output="false"
+        :show-import-map="false"
+        :clear-console="false"
+      />
+    </div>
   </el-dialog>
 </template>

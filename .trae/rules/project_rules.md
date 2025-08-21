@@ -46,6 +46,9 @@ code_gen/
 │   │   └── middleware/   # 服务端中间件
 │   └── utils/            # 工具函数
 ├── public/               # 公共静态文件
+├── server/               # 服务端代码
+├── shared/               # 共享代码
+│   └── utils/            # 共享工具函数自动导入
 └── types/                # TypeScript类型定义
 ```
 

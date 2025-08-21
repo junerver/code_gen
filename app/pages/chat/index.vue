@@ -97,6 +97,14 @@
                   circle
                   @click="handleExtractCode(item)"
                 />
+                <!-- 预览组件 -->
+                <el-button
+                  color="#67c23a"
+                  :icon="View"
+                  size="small"
+                  circle
+                  @click="handlePreview(item)"
+                />
               </div>
             </template>
           </BubbleList>
@@ -127,27 +135,31 @@
       class="error-alert"
       @close="error = undefined"
     />
+    <CodePreview ref="previewRef" />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed, nextTick } from "vue";
 import {
   ChatDotRound,
   Delete,
+  DocumentCopy,
   Plus,
   Refresh,
-  DocumentCopy,
+  View,
 } from "@element-plus/icons-vue";
 import { ElMessage, ElMessageBox } from "element-plus";
+import { computed, nextTick, onMounted, ref } from "vue";
 import { BubbleList, Conversations, Sender } from "vue-element-plus-x";
-import { useChat } from "~/composables/useChat";
 import type {
   ConversationItem,
   ConversationMenuCommand,
 } from "vue-element-plus-x/types/Conversations";
-import type { Conversation } from "~/types/conversation";
+import { useChat } from "~/composables/useChat";
 import type { ChatMessage } from "~/types/chat";
+import type { Conversation } from "~/types/conversation";
+
+const previewRef = ref();
 
 // 修改 title
 useHead({
@@ -233,7 +245,6 @@ const handleSendMessage = async (message?: string): Promise<void> => {
  * @param item 要重新生成的消息项
  */
 const handleRegenerate = async (item: ChatMessage): Promise<void> => {
-  console.log("重新生成消息", item);
   if (item.role !== "assistant") return;
   // 提示重生成将替换当前消息
   ElMessageBox.confirm(
@@ -243,7 +254,7 @@ const handleRegenerate = async (item: ChatMessage): Promise<void> => {
       confirmButtonText: "确定",
       cancelButtonText: "取消",
       type: "warning",
-    }
+    },
   )
     .then(async () => {
       // 调用重新生成消息的 API
@@ -279,11 +290,24 @@ const handleExtractCode = (item: ChatMessage): void => {
 };
 
 /**
+ * 处理代码预览
+ */
+const handlePreview = (item: ChatMessage): void => {
+  if (item.role !== "assistant") return;
+  const sourceCode = extractCode(item.content);
+  if (sourceCode) {
+    previewRef.value?.openDialog(sourceCode);
+  } else {
+    ElMessage.warning("未提取到组件源码");
+  }
+};
+
+/**
  * 处理会话选择
  * @param item 选中的会话项
  */
 const handleConversationSelect = (
-  item: ConversationItem<Conversation>
+  item: ConversationItem<Conversation>,
 ): void => {
   if (item.id === activeConversation.value) return;
   conversationStore.setActiveConversation(item.id);
@@ -323,7 +347,7 @@ const handleConversationCreate = (): void => {
  */
 function handleMenuCommand(
   command: ConversationMenuCommand,
-  item: ConversationItem<Conversation>
+  item: ConversationItem<Conversation>,
 ) {
   if (command === "delete") {
     ElMessageBox.confirm(
@@ -333,7 +357,7 @@ function handleMenuCommand(
         confirmButtonText: "确定",
         cancelButtonText: "取消",
         type: "warning",
-      }
+      },
     )
       .then(() => {
         conversationStore.deleteConversation(item.id);
@@ -382,7 +406,7 @@ const handleClearChat = (): void => {
       confirmButtonText: "确定",
       cancelButtonText: "取消",
       type: "warning",
-    }
+    },
   )
     .then(() => {
       clearMessages();

@@ -3,8 +3,10 @@
  * @Author 侯文君
  * @Date 2025-08-20 16:45
  * @LastEditors 侯文君
- * @LastEditTime 2025-08-21 13:14
+ * @LastEditTime 2025-08-22 10:04
  */
+
+import { trimIndent } from "#shared/utils/string";
 
 /**
  * 从文本内容中提取指定语言的代码块
@@ -14,29 +16,234 @@
  * @returns 提取到的代码内容，如果没有提取到代码块，则返回原始内容
  */
 export const extractCode = (
-	content: string,
-	language?: string,
-	index: number = 0,
+  content: string,
+  language?: string,
+  index: number = 0,
 ): string => {
-	// 正则表达式匹配代码块，支持可选的语言标识
-	const codeRegex = language
-		? new RegExp(`\`\`\`${language}[\\s\\S]*?\`\`\``, "g")
-		: /```[\s\S]*?```/g;
+  // 正则表达式匹配代码块，支持可选的语言标识
+  const codeRegex = language
+    ? new RegExp(`\`\`\`${language}[\\s\\S]*?\`\`\``, "g")
+    : /```[\s\S]*?```/g;
 
-	const matches = content.match(codeRegex);
-	if (!matches || matches.length <= index) {
-		return content;
-	}
+  const matches = content.match(codeRegex);
+  if (!matches || matches.length <= index) {
+    return "";
+  }
 
-	// 提取指定索引的代码块中的实际代码内容
-	const codeBlock = matches[index];
-	// 移除开头的 ```language 或 ``` 和结尾的 ```
-	// 添加类型检查，确保codeBlock不为undefined
-	const code =
-		codeBlock ||
-		""
-			.replace(/^```(?:\w+)?\s*/, "") // 移除开头的```和可选的语言标识
-			.replace(/\s*```$/, ""); // 移除结尾的```
+  // 提取指定索引的代码块中的实际代码内容
+  const codeBlock = matches[index];
+  // 移除开头的 ```language 或 ``` 和结尾的 ```
+  // 添加类型检查，确保codeBlock不为undefined
+  const code = (codeBlock || "")
+    .replace(/^```(?:\w+)?\s*/, "") // 移除开头的```和可选的语言标识
+    .replace(/\s*```$/, ""); // 移除结尾的```
 
-	return code.trim();
+  return code.trim();
+};
+
+/**
+ * 常用的Vue API列表
+ */
+const VUE_APIS = [
+  "ref",
+  "reactive",
+  "computed",
+  "watch",
+  "watchEffect",
+  "onMounted",
+  "onUnmounted",
+  "onUpdated",
+  "onBeforeMount",
+  "onBeforeUnmount",
+  "nextTick",
+  "defineProps",
+  "defineEmits",
+  "defineExpose",
+  "shallowRef",
+  "shallowReactive",
+  "readonly",
+  "shallowReadonly",
+  "toRef",
+  "toRefs",
+  "unref",
+  "isRef",
+  "isReactive",
+  "isReadonly",
+  "isProxy",
+  "provide",
+  "inject",
+  "getCurrentInstance",
+  "useSlots",
+  "useAttrs",
+  "markRaw",
+  "effectScope",
+  "getCurrentScope",
+  "onScopeDispose",
+  "customRef",
+  "triggerRef",
+  "toRaw",
+];
+
+/**
+ * 检测代码中使用的Vue API
+ * @param code 代码字符串
+ * @returns 使用的Vue API数组
+ */
+const detectUsedVueApis = (code: string): string[] => {
+  const usedApis: string[] = [];
+
+  // 检查每个Vue API是否在代码中被使用
+  VUE_APIS.forEach((api) => {
+    // 使用正则表达式检查API是否被使用（避免误匹配字符串中的内容）
+    const regex = new RegExp(`\\b${api}\\b`, "g");
+    if (regex.test(code)) {
+      usedApis.push(api);
+    }
+  });
+
+  return usedApis;
+};
+
+/**
+ * 从导入语句中提取已导入的API
+ * @param script 脚本代码
+ * @returns 已导入的Vue API数组
+ */
+const extractExistingVueImports = (script: string): string[] => {
+  const importRegex = /import\s*{([^}]+)}\s*from\s*['"]vue['"]/g;
+  const matches = script.match(importRegex);
+
+  if (!matches) return [];
+
+  const existingApis: string[] = [];
+  matches.forEach((match) => {
+    const apiMatch = match.match(/import\s*{([^}]+)}/);
+    if (apiMatch) {
+      const apis =
+        apiMatch?.[1]
+          ?.split(",")
+          ?.map((api) => api.trim())
+          ?.filter((api) => api.length > 0) || [];
+      existingApis.push(...apis);
+    }
+  });
+
+  return [...new Set(existingApis)]; // 去重
+};
+
+/**
+ * 生成Vue API导入语句
+ * @param apis 需要导入的API数组
+ * @returns 导入语句字符串
+ */
+const generateVueImport = (apis: string[]): string => {
+  if (apis.length === 0) return "";
+
+  return `import { ${apis.join(", ")} } from 'vue'`;
+};
+
+/**
+ * 移除脚本中已存在的Vue导入语句
+ * @param script 脚本代码
+ * @returns 移除导入语句后的脚本代码
+ */
+const removeExistingVueImports = (script: string): string => {
+  return script.replace(/import\s*{[^}]+}\s*from\s*['"]vue['"];?\s*\n?/g, "");
+};
+
+/**
+ * 创建可预览的代码
+ * @param code 原始代码
+ * @returns 可预览的代码字符串
+ */
+export const genPreviewCode = (code: string) => {
+  // 提取Vue组件的模板、脚本和样式
+  const { template, script, style } = extractVuePart(code);
+
+  // 检测代码中使用的Vue API
+  const usedVueApis = detectUsedVueApis(template + script);
+  // 检查脚本中是否已经包含Vue的导入
+  const hasVueImport =
+    script.includes('from "vue"') || script.includes("from 'vue'");
+  // 提取已存在的Vue导入API
+  const existingVueImports = extractExistingVueImports(script);
+
+  // 检查脚本中是否已经包含 Element Plus 的导入和初始化
+  const hasElementPlusImport =
+    script.includes('from "element-plus"') ||
+    script.includes("from 'element-plus'");
+  const hasSetupElementPlus = script.includes("setupElementPlus");
+
+  // 构建增强的脚本
+  let enhancedScript = script;
+
+  // 处理Vue API导入
+  if (usedVueApis.length > 0) {
+    if (hasVueImport) {
+      // 如果已有导入，合并缺失的API
+      const missingApis = usedVueApis.filter(
+        (api) => !existingVueImports.includes(api),
+      );
+      if (missingApis.length > 0) {
+        // 移除原有的导入语句
+        enhancedScript = removeExistingVueImports(enhancedScript);
+        // 生成新的完整导入语句
+        const allApis = [...new Set([...existingVueImports, ...usedVueApis])];
+        const vueImportStatement = generateVueImport(allApis);
+        enhancedScript = `${vueImportStatement}\n${enhancedScript}`;
+      }
+    } else {
+      // 如果没有导入，直接添加
+      const vueImportStatement = generateVueImport(usedVueApis);
+      enhancedScript = `${vueImportStatement}\n${enhancedScript}`;
+    }
+  }
+
+  // 如果没有 Element Plus 相关的导入，则添加
+  if (!hasElementPlusImport && !hasSetupElementPlus) {
+    enhancedScript = trimIndent(`
+      import { setupElementPlus } from './element-plus.js'
+      ${enhancedScript}
+      setupElementPlus()
+    `);
+  }
+
+  return trimIndent(`
+    <template>
+    ${template}
+    </template>
+
+    <script setup>
+    ${enhancedScript}
+    </script>
+
+    <style scoped>
+    ${style}
+    </style>
+  `);
+};
+
+/**
+ * 从代码中提取 Vue 相关的部分（template、script、style）
+ * @param code 包含 Vue 组件代码的字符串
+ * @returns 包含提取到的 template、script、style 代码的对象
+ */
+export const extractVuePart = (code: string) => {
+  const templateRegex = /<template>([\s\S]*?)<\/template>/;
+  const scriptRegex = /<script setup>([\s\S]*?)<\/script>/;
+  const styleRegex = /<style scoped>([\s\S]*?)<\/style>/;
+
+  const templateMatch = code.match(templateRegex);
+  const scriptMatch = code.match(scriptRegex);
+  const styleMatch = code.match(styleRegex);
+
+  const template = templateMatch?.[1]?.trim() ?? "";
+  const script = scriptMatch?.[1]?.trim() ?? "";
+  const style = styleMatch?.[1]?.trim() ?? "";
+
+  return {
+    template,
+    script,
+    style,
+  };
 };

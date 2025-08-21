@@ -97,6 +97,14 @@
                   circle
                   @click="handleExtractCode(item)"
                 />
+                <!-- 预览组件 -->
+                <el-button
+                  color="#67c23a"
+                  :icon="View"
+                  size="small"
+                  circle
+                  @click="handlePreview(item)"
+                />
               </div>
             </template>
           </BubbleList>
@@ -127,6 +135,7 @@
       class="error-alert"
       @close="error = undefined"
     />
+    <CodePreview ref="previewRef" />
   </div>
 </template>
 
@@ -138,6 +147,7 @@ import {
   Plus,
   Refresh,
   DocumentCopy,
+  View,
 } from "@element-plus/icons-vue";
 import { ElMessage, ElMessageBox } from "element-plus";
 import { BubbleList, Conversations, Sender } from "vue-element-plus-x";
@@ -148,6 +158,8 @@ import type {
 } from "vue-element-plus-x/types/Conversations";
 import type { Conversation } from "~/types/conversation";
 import type { ChatMessage } from "~/types/chat";
+
+const previewRef = ref();
 
 // 修改 title
 useHead({
@@ -264,6 +276,8 @@ const handleExtractCode = (item: ChatMessage): void => {
   if (item.role !== "assistant") return;
   const sourceCode = extractCode(item.content);
   if (sourceCode) {
+    console.log("提取到的代码:", sourceCode);
+
     // 复制到剪贴板
     navigator.clipboard
       .writeText(sourceCode)
@@ -273,6 +287,19 @@ const handleExtractCode = (item: ChatMessage): void => {
       .catch(() => {
         ElMessage.error("复制失败,请手动复制");
       });
+  } else {
+    ElMessage.warning("未提取到组件源码");
+  }
+};
+
+/**
+ * 处理代码预览
+ */
+const handlePreview = (item: ChatMessage): void => {
+  if (item.role !== "assistant") return;
+  const sourceCode = extractCode(item.content);
+  if (sourceCode) {
+    previewRef.value?.openDialog(sourceCode);
   } else {
     ElMessage.warning("未提取到组件源码");
   }

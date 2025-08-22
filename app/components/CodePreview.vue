@@ -10,30 +10,30 @@ const vueVersion = "3.5.19";
 
 // 生成导入映射
 const generateImportMap = () => {
-  return {
-    imports: {
-      vue: `https://unpkg.com/vue@${vueVersion}/dist/vue.esm-browser.js`,
-      "@vue/shared": `https://unpkg.com/@vue/shared@${vueVersion}/dist/shared.esm-bundler.js`,
-      "element-plus": `https://unpkg.com/element-plus@${elementPlusVersion}/dist/index.full.min.mjs`,
-      "element-plus/": `https://unpkg.com/element-plus@${elementPlusVersion}/`,
-      "@element-plus/icons-vue": `https://unpkg.com/@element-plus/icons-vue@${elementIconVersion}/dist/index.min.js`,
-    },
-  };
+	return {
+		imports: {
+			vue: `https://unpkg.com/vue@${vueVersion}/dist/vue.esm-browser.js`,
+			"@vue/shared": `https://unpkg.com/@vue/shared@${vueVersion}/dist/shared.esm-bundler.js`,
+			"element-plus": `https://unpkg.com/element-plus@${elementPlusVersion}/dist/index.full.min.mjs`,
+			"element-plus/": `https://unpkg.com/element-plus@${elementPlusVersion}/`,
+			"@element-plus/icons-vue": `https://unpkg.com/@element-plus/icons-vue@${elementIconVersion}/dist/index.min.js`,
+		},
+	};
 };
 
 const store = useStore({
-  vueVersion: ref(vueVersion),
-  builtinImportMap: ref(generateImportMap()),
-  sfcOptions: ref({
-    script: {
-      propsDestructure: true,
-    },
-  }),
+	vueVersion: ref(vueVersion),
+	builtinImportMap: ref(generateImportMap()),
+	sfcOptions: ref({
+		script: {
+			propsDestructure: true,
+		},
+	}),
 });
 
 // 预览选项配置
 const previewOptions = ref({
-  headHTML: `
+	headHTML: `
     <link rel="stylesheet" href="https://unpkg.com/element-plus@${elementPlusVersion}/dist/index.css">
     <style>
       body {
@@ -43,7 +43,7 @@ const previewOptions = ref({
       }
     </style>
   `,
-  bodyHTML: '<div id="app"></div>',
+	bodyHTML: '<div id="app"></div>',
 });
 
 // Element Plus 初始化代码
@@ -78,29 +78,27 @@ export function loadStyle() {
 }`.replace(/\$\{elementPlusVersion\}/g, elementPlusVersion);
 
 watch(
-  componentCode,
-  () => {
-    if (!componentCode.value) return;
+	componentCode,
+	() => {
+		if (!componentCode.value) return;
 
-    // 设置文件
-    store.setFiles({
-      "App.vue": componentCode.value,
-      "element-plus.js": elementPlusSetup,
-      "import-map.json": JSON.stringify(generateImportMap(), null, 2),
-    });
+		// 设置文件
+		store.setFiles({
+			"App.vue": componentCode.value,
+			"element-plus.js": elementPlusSetup,
+			"import-map.json": JSON.stringify(generateImportMap(), null, 2),
+		});
 
-    // 设置主文件
-    store.mainFile = "App.vue";
-    store.activeFilename = "App.vue";
-  },
-  { immediate: true }
+		// 设置主文件
+		store.mainFile = "App.vue";
+		store.activeFilename = "App.vue";
+	},
+	{ immediate: true },
 );
 
 const openDialog = (code: string) => {
-  const previewCode = genPreviewCode(code);
-  console.log("预览代码:", previewCode);
-  componentCode.value = previewCode;
-  dialogVisible.value = true;
+	componentCode.value = genPreviewCode(code);
+	dialogVisible.value = true;
 };
 
 defineExpose({ openDialog });

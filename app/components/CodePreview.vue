@@ -117,8 +117,6 @@ defineExpose({ openDialog });
       <Sandbox
         :store="store"
         :preview-options="previewOptions"
-        :show-compile-output="false"
-        :show-import-map="false"
         :clear-console="false"
       />
     </div>

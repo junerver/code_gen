@@ -76,10 +76,19 @@
             :list="formattedMessages"
             class="bubble-list"
           >
+            <template #header="{ item }">
+              <div v-if="item.role === 'assistant' && item.reasoningContent">
+                <Thinking
+                  auto-collapse
+                  :content="item.reasoningContent"
+                  :status="item.reasoningStatus"
+                />
+              </div>
+            </template>
             <template #footer="{ item }">
               <div
-                class="footer-container"
                 v-if="item.role === 'assistant' && !item.typing"
+                class="footer-container"
               >
                 <!-- 重新生成 -->
                 <el-button
@@ -150,7 +159,12 @@ import {
 } from "@element-plus/icons-vue";
 import { ElMessage, ElMessageBox } from "element-plus";
 import { computed, nextTick, onMounted, ref } from "vue";
-import { BubbleList, Conversations, Sender } from "vue-element-plus-x";
+import {
+  BubbleList,
+  Conversations,
+  Sender,
+  Thinking,
+} from "vue-element-plus-x";
 import type {
   ConversationItem,
   ConversationMenuCommand,
@@ -254,7 +268,7 @@ const handleRegenerate = async (item: ChatMessage): Promise<void> => {
       confirmButtonText: "确定",
       cancelButtonText: "取消",
       type: "warning",
-    },
+    }
   )
     .then(async () => {
       // 调用重新生成消息的 API
@@ -307,7 +321,7 @@ const handlePreview = (item: ChatMessage): void => {
  * @param item 选中的会话项
  */
 const handleConversationSelect = (
-  item: ConversationItem<Conversation>,
+  item: ConversationItem<Conversation>
 ): void => {
   if (item.id === activeConversation.value) return;
   conversationStore.setActiveConversation(item.id);
@@ -347,7 +361,7 @@ const handleConversationCreate = (): void => {
  */
 function handleMenuCommand(
   command: ConversationMenuCommand,
-  item: ConversationItem<Conversation>,
+  item: ConversationItem<Conversation>
 ) {
   if (command === "delete") {
     ElMessageBox.confirm(
@@ -357,7 +371,7 @@ function handleMenuCommand(
         confirmButtonText: "确定",
         cancelButtonText: "取消",
         type: "warning",
-      },
+      }
     )
       .then(() => {
         conversationStore.deleteConversation(item.id);
@@ -406,7 +420,7 @@ const handleClearChat = (): void => {
       confirmButtonText: "确定",
       cancelButtonText: "取消",
       type: "warning",
-    },
+    }
   )
     .then(() => {
       clearMessages();

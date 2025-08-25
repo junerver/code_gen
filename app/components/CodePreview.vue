@@ -93,13 +93,11 @@ watch(
     store.mainFile = "App.vue";
     store.activeFilename = "App.vue";
   },
-  { immediate: true }
+  { immediate: true },
 );
 
 const openDialog = (code: string) => {
-  const previewCode = genPreviewCode(code);
-  console.log("previewCode", previewCode);
-  componentCode.value = previewCode;
+  componentCode.value = genPreviewCode(code);
   dialogVisible.value = true;
 };
 

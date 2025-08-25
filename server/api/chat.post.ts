@@ -3,25 +3,26 @@
  * @Author 侯文君
  * @Date 2025-08-18 18:49
  * @LastEditors 侯文君
- * @LastEditTime 2025-08-25 14:34
+ * @LastEditTime 2025-08-25 17:19
  */
 
-import { ollama } from "ollama-ai-provider-v2";
 import { streamText } from "ai";
+import { siliconflow } from "~/utils/model";
 
 export default defineLazyEventHandler(async () => {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return defineEventHandler(async (event: any) => {
     const { messages } = await readBody(event);
     const result = streamText({
-      model: ollama("qwen2.5:7b"),
+      model: siliconflow("deepseek-ai/DeepSeek-R1"), // ollama("qwen2.5:7b")
       system: `
 			你是一个专业的前端开发专家，专门负责生成高质量的Vue3 UI组件代码。
 
 			你的任务是根据用户的具体需求，生成符合生产环境要求的Vue3组件代码，技术栈限定为：
-			- Vue3 (Composition API)
+			- Vue3.5 (Composition API)
 			- JavaScript (ES6+)
 			- Element Plus UI组件库
+			- setup 语法糖
 
 			请严格按照以下要求生成代码:
 			1. 代码结构清晰，遵循Vue3最佳实践，代码必须符合指定的技术栈和组件库规范

@@ -18,14 +18,6 @@ export const useChat = () => {
   );
 
   /**
-   * 生成消息ID
-   * @returns 唯一的消息ID
-   */
-  const generateMessageId = (): string => {
-    return `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-  };
-
-  /**
    * 添加用户消息到当前会话
    * @param content 消息内容
    */

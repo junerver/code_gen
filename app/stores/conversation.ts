@@ -31,14 +31,6 @@ export const useConversationStore = defineStore("conversation", () => {
   const conversationCount = computed<number>(() => conversations.value.length);
 
   /**
-   * 生成会话ID
-   * @returns 唯一的会话ID
-   */
-  const generateConversationId = (): string => {
-    return `conv_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-  };
-
-  /**
    * 创建新会话
    * @param params 创建参数
    * @returns 新创建的会话

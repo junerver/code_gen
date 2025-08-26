@@ -44,7 +44,7 @@ export default defineLazyEventHandler(async () => {
 			- 表单验证(如适用)
 			- 响应式设计适配
 
-			请生成完整、可直接使用的Vue3组件代码。
+			请生成完整、可直接使用的Vue3组件代码，生成的代码使用 markdown 代码块格式包裹（\`\`\`vue）
 			`,
       messages,
     });

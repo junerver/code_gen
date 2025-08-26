@@ -169,6 +169,32 @@ export const useConversationStore = defineStore("conversation", () => {
   };
 
   /**
+   * 更新指定会话中的消息推理内容
+   * @param conversationId 会话ID
+   * @param messageId 消息ID
+   * @param reasoningContent 推理内容
+   * @param reasoningStatus 推理状态
+   */
+  const updateMessageReasoning = (
+    conversationId: string,
+    messageId: string,
+    reasoningContent: string,
+    reasoningStatus?: ChatMessage["reasoningStatus"],
+  ): void => {
+    const messages = conversationMessages.value.get(conversationId) || [];
+    const messageIndex = messages.findIndex((msg) => msg.id === messageId);
+    if (messageIndex > -1) {
+      const message = messages[messageIndex];
+      if (message) {
+        message.reasoningContent = reasoningContent;
+        if (reasoningStatus) {
+          message.reasoningStatus = reasoningStatus;
+        }
+      }
+    }
+  };
+
+  /**
    * 删除指定会话中的消息
    * @param conversationId 会话ID
    * @param messageId 消息ID
@@ -287,6 +313,7 @@ export const useConversationStore = defineStore("conversation", () => {
     setActiveConversation,
     addMessage,
     updateMessage,
+    updateMessageReasoning,
     deleteMessage,
     clearMessages,
     getMessages,

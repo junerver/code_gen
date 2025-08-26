@@ -146,6 +146,7 @@ export const useChat = () => {
 
     const decoder = new TextDecoder();
     let accumulatedContent = "";
+    let reasoningContent = "";
 
     while (true) {
       const { done, value } = await reader.read();
@@ -160,10 +161,36 @@ export const useChat = () => {
             const jsonStr = line.slice(6); // 移除 'data: ' 前缀
             const data = JSON.parse(jsonStr);
 
-            // 处理ollama的text-delta类型数据
+            // 处理 assistant 的 text-delta 类型数据（正文）
             if (data.type === "text-delta" && data.delta) {
               accumulatedContent += data.delta;
               updateAssistantMessage(assistantMessageId, accumulatedContent);
+            }
+            if (data.type === "reasoning-start" && data.delta) {
+              reasoningContent = "";
+              conversationStore.updateMessageReasoning(
+                conversationStore.activeConversationId,
+                assistantMessageId,
+                reasoningContent,
+                "start",
+              );
+            }
+            if (data.type === "reasoning-delta" && data.delta) {
+              reasoningContent += data.delta;
+              conversationStore.updateMessageReasoning(
+                conversationStore.activeConversationId,
+                assistantMessageId,
+                reasoningContent,
+                "thinking",
+              );
+            }
+            if (data.type === "text-start" && reasoningContent) {
+              conversationStore.updateMessageReasoning(
+                conversationStore.activeConversationId,
+                assistantMessageId,
+                reasoningContent,
+                "end",
+              );
             }
           } catch (parseError) {
             console.warn("解析流数据失败:", parseError, "原始行:", line);

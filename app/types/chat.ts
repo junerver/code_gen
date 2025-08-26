@@ -7,10 +7,14 @@ import type { BubbleProps } from "vue-element-plus-x/types/Bubble";
  * @LastEditTime 18:49
  */
 export type ChatMessage = BubbleProps & {
-	id: string;
-	// 消息内容
-	content: string;
-	// 消息的角色
-	role: "user" | "assistant" | "system";
-	timestamp: Date;
+  id: string;
+  // 消息内容
+  content: string;
+  // 消息的角色
+  role: "user" | "assistant" | "system";
+  timestamp: Date;
+  // 推理内容
+  reasoningContent?: string;
+  // 推理状态
+  reasoningStatus?: "start" | "thinking" | "end" | "error";
 };

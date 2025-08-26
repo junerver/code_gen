@@ -1,6 +1,6 @@
-import { computed, readonly, ref } from "vue";
-import { useConversationStore } from "~/stores/conversation";
-import type { ChatMessage } from "~/types/chat";
+import { computed, readonly, ref } from 'vue';
+import { useConversationStore } from '~/stores/conversation';
+import type { ChatMessage } from '~/types/chat';
 
 /**
  * 聊天功能组合式函数
@@ -35,11 +35,11 @@ export const useChat = () => {
     const message: ChatMessage = {
       id: generateMessageId(),
       content,
-      role: "user",
+      role: 'user',
       timestamp: new Date(),
       typing: false,
       isMarkdown: false,
-      shape: "corner",
+      shape: 'corner',
     };
     conversationStore.addMessage(
       conversationStore.activeConversationId,
@@ -50,7 +50,7 @@ export const useChat = () => {
     if (isFirstMessage) {
       // 截取前30个字符作为标题，避免标题过长
       const title =
-        content.length > 30 ? content.slice(0, 30) + "..." : content;
+        content.length > 30 ? content.slice(0, 30) + '...' : content;
       conversationStore.updateConversation(
         conversationStore.activeConversationId,
         { title },
@@ -62,7 +62,7 @@ export const useChat = () => {
    * 添加助手消息到当前会话
    * @param content 消息内容
    */
-  const addAssistantMessage = (content: string = ""): string => {
+  const addAssistantMessage = (content: string = ''): string => {
     if (!conversationStore.activeConversationId) {
       conversationStore.initializeDefaultConversation();
     }
@@ -70,11 +70,11 @@ export const useChat = () => {
     const message: ChatMessage = {
       id: generateMessageId(),
       content,
-      role: "assistant",
+      role: 'assistant',
       timestamp: new Date(),
-      typing: { step: 5, interval: 35, suffix: "|" },
+      typing: { step: 5, interval: 35, suffix: '|' },
       isMarkdown: true,
-      shape: "corner",
+      shape: 'corner',
       loading: true,
     };
     conversationStore.addMessage(
@@ -114,13 +114,13 @@ export const useChat = () => {
     assistantMessageId: string,
   ): Promise<string> => {
     // 调用流式API
-    const response = await fetch("/api/chat", {
-      method: "POST",
+    const response = await fetch('/api/chat', {
+      method: 'POST',
       headers: {
-        "Content-Type": "application/json",
+        'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        messages: messages.value.map((msg) => ({
+        messages: messages.value.map(msg => ({
           role: msg.role,
           content: msg.content,
         })),
@@ -133,59 +133,59 @@ export const useChat = () => {
 
     const reader = response.body?.getReader();
     if (!reader) {
-      throw new Error("无法获取响应流");
+      throw new Error('无法获取响应流');
     }
 
     const decoder = new TextDecoder();
-    let accumulatedContent = "";
-    let reasoningContent = "";
+    let accumulatedContent = '';
+    let reasoningContent = '';
 
     while (true) {
       const { done, value } = await reader.read();
       if (done) break;
 
       const chunk = decoder.decode(value, { stream: true });
-      const lines = chunk.split("\n");
+      const lines = chunk.split('\n');
 
       for (const line of lines) {
-        if (line.startsWith("data: ") && !line.includes("[DONE]")) {
+        if (line.startsWith('data: ') && !line.includes('[DONE]')) {
           try {
             const jsonStr = line.slice(6); // 移除 'data: ' 前缀
             const data = JSON.parse(jsonStr);
 
             // 处理 assistant 的 text-delta 类型数据（正文）
-            if (data.type === "text-delta" && data.delta) {
+            if (data.type === 'text-delta' && data.delta) {
               accumulatedContent += data.delta;
               updateAssistantMessage(assistantMessageId, accumulatedContent);
             }
-            if (data.type === "reasoning-start" && data.delta) {
-              reasoningContent = "";
+            if (data.type === 'reasoning-start' && data.delta) {
+              reasoningContent = '';
               conversationStore.updateMessageReasoning(
                 conversationStore.activeConversationId,
                 assistantMessageId,
                 reasoningContent,
-                "start",
+                'start',
               );
             }
-            if (data.type === "reasoning-delta" && data.delta) {
+            if (data.type === 'reasoning-delta' && data.delta) {
               reasoningContent += data.delta;
               conversationStore.updateMessageReasoning(
                 conversationStore.activeConversationId,
                 assistantMessageId,
                 reasoningContent,
-                "thinking",
+                'thinking',
               );
             }
-            if (data.type === "text-start" && reasoningContent) {
+            if (data.type === 'text-start' && reasoningContent) {
               conversationStore.updateMessageReasoning(
                 conversationStore.activeConversationId,
                 assistantMessageId,
                 reasoningContent,
-                "end",
+                'end',
               );
             }
           } catch (parseError) {
-            console.warn("解析流数据失败:", parseError, "原始行:", line);
+            console.warn('解析流数据失败:', parseError, '原始行:', line);
           }
         }
       }
@@ -217,8 +217,8 @@ export const useChat = () => {
       // 生成回复
       await generateResponse(assistantMessageId);
     } catch (err) {
-      error.value = err instanceof Error ? err.message : "发送消息失败";
-      console.error("发送消息失败:", err);
+      error.value = err instanceof Error ? err.message : '发送消息失败';
+      console.error('发送消息失败:', err);
 
       // 如果出错，处理助手消息状态
       if (conversationStore.activeConversationId) {
@@ -226,8 +226,8 @@ export const useChat = () => {
           conversationStore.activeConversationId,
         );
         const lastMessage = currentMessages[currentMessages.length - 1];
-        if (currentMessages.length > 0 && lastMessage?.role === "assistant") {
-          if (lastMessage.content === "") {
+        if (currentMessages.length > 0 && lastMessage?.role === 'assistant') {
+          if (lastMessage.content === '') {
             // 如果消息为空，删除消息
             conversationStore.deleteMessage(
               conversationStore.activeConversationId,
@@ -267,10 +267,10 @@ export const useChat = () => {
 
       // 找到指定消息的索引
       const messageIndex = currentMessages.findIndex(
-        (msg) => msg.id === messageId,
+        msg => msg.id === messageId,
       );
       if (messageIndex === -1) {
-        throw new Error("未找到指定的消息");
+        throw new Error('未找到指定的消息');
       }
 
       // 删除指定消息及其之后的所有消息
@@ -288,8 +288,8 @@ export const useChat = () => {
       // 生成新的回复
       await generateResponse(assistantMessageId);
     } catch (err) {
-      error.value = err instanceof Error ? err.message : "重新生成失败";
-      console.error("重新生成失败:", err);
+      error.value = err instanceof Error ? err.message : '重新生成失败';
+      console.error('重新生成失败:', err);
 
       // 如果出错，处理助手消息状态
       if (conversationStore.activeConversationId) {
@@ -297,8 +297,8 @@ export const useChat = () => {
           conversationStore.activeConversationId,
         );
         const lastMessage = currentMessages[currentMessages.length - 1];
-        if (currentMessages.length > 0 && lastMessage?.role === "assistant") {
-          if (lastMessage.content === "") {
+        if (currentMessages.length > 0 && lastMessage?.role === 'assistant') {
+          if (lastMessage.content === '') {
             // 如果消息为空，删除消息
             conversationStore.deleteMessage(
               conversationStore.activeConversationId,

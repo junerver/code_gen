@@ -13,15 +13,15 @@
  */
 export function trimIndent(str: string) {
   if (!str) return str;
-  const lines = str.split("\n");
+  const lines = str.split('\n');
 
   // 移除第一行如果为空
-  if (lines[0]?.trim() === "") lines.shift();
-  if (lines[lines.length - 1]?.trim() === "") lines.pop();
+  if (lines[0]?.trim() === '') lines.shift();
+  if (lines[lines.length - 1]?.trim() === '') lines.pop();
 
   const indent = Math.min(
-    ...lines.filter((line) => line.trim()).map((line) => line.search(/\S/)), // 第一个非空白字符的位置
+    ...lines.filter(line => line.trim()).map(line => line.search(/\S/)), // 第一个非空白字符的位置
   );
 
-  return lines.map((line) => line.slice(indent)).join("\n");
+  return lines.map(line => line.slice(indent)).join('\n');
 }

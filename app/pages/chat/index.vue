@@ -80,6 +80,7 @@
               <div v-if="item.role === 'assistant' && item.reasoningContent">
                 <Thinking
                   auto-collapse
+                  max-width="900px"
                   :content="item.reasoningContent"
                   :status="item.reasoningStatus"
                 />
@@ -145,6 +146,7 @@
       @close="error = undefined"
     />
     <CodePreview ref="previewRef" />
+    <CodeRenderer ref="rendererRef" />
   </div>
 </template>
 
@@ -156,28 +158,30 @@ import {
   Plus,
   Refresh,
   View,
-} from "@element-plus/icons-vue";
-import { ElMessage, ElMessageBox } from "element-plus";
-import { computed, nextTick, onMounted, ref } from "vue";
+} from '@element-plus/icons-vue';
+import { ElMessage, ElMessageBox } from 'element-plus';
+import { computed, nextTick, onMounted, ref } from 'vue';
 import {
   BubbleList,
   Conversations,
   Sender,
   Thinking,
-} from "vue-element-plus-x";
+} from 'vue-element-plus-x';
 import type {
   ConversationItem,
   ConversationMenuCommand,
-} from "vue-element-plus-x/types/Conversations";
-import { useChat } from "~/composables/useChat";
-import type { ChatMessage } from "~/types/chat";
-import type { Conversation } from "~/types/conversation";
+} from 'vue-element-plus-x/types/Conversations';
+import CodeRenderer from '~/components/CodeRenderer.vue';
+import { useChat } from '~/composables/useChat';
+import type { ChatMessage } from '~/types/chat';
+import type { Conversation } from '~/types/conversation';
 
 const previewRef = ref();
+const rendererRef = ref();
 
 // 修改 title
 useHead({
-  title: "AI代码生成助手",
+  title: 'AI代码生成助手',
 });
 
 // 使用聊天功能
@@ -192,13 +196,13 @@ const {
 } = useChat();
 
 // 响应式数据
-const inputMessage = ref("");
+const inputMessage = ref('');
 const messagesContainer = ref<HTMLElement>();
 const bubbleListRef = ref();
 
 // 从store获取会话相关数据
 const conversations = computed<ConversationItem<Conversation>[]>(() => {
-  return conversationStore.conversations.map((conv) => ({
+  return conversationStore.conversations.map(conv => ({
     // 直接展开 conv 对象,避免重复指定 id
     ...conv,
     label: conv.title,
@@ -220,23 +224,23 @@ const activeConversation = computed({
 });
 
 // 头像配置
-const userAvatar = "https://avatars.githubusercontent.com/u/76239030?v=4";
+const userAvatar = 'https://avatars.githubusercontent.com/u/76239030?v=4';
 const assistantAvatar =
-  "https://cube.elemecdn.com/9/c2/f0ee8a3c7c9638a54940382568c9dpng.png";
+  'https://cube.elemecdn.com/9/c2/f0ee8a3c7c9638a54940382568c9dpng.png';
 
 // 格式化消息数据，将存储在内存中的数据转换成 BubbleList 组件需要的数据结构
 const formattedMessages = computed<ChatMessage[]>(() => {
-  return messages.value.map((message) => {
-    const isUser = message.role === "user";
-    const variant = !isUser ? "filled" : "outlined";
-    const placement = isUser ? "end" : "start";
+  return messages.value.map(message => {
+    const isUser = message.role === 'user';
+    const variant = !isUser ? 'filled' : 'outlined';
+    const placement = isUser ? 'end' : 'start';
     return {
       ...message,
       placement,
       avatar: isUser ? userAvatar : assistantAvatar,
-      avatarSize: "32px",
+      avatarSize: '32px',
       variant,
-      maxWidth: isUser ? "500px" : "900px",
+      maxWidth: '900px',
     };
   });
 });
@@ -248,7 +252,7 @@ const handleSendMessage = async (message?: string): Promise<void> => {
   const messageContent = message || inputMessage.value.trim();
   if (!messageContent || loading.value) return;
 
-  inputMessage.value = "";
+  inputMessage.value = '';
   // 发送消息，现在包含流式处理
   await sendMessage(messageContent);
   await scrollToBottom();
@@ -259,16 +263,16 @@ const handleSendMessage = async (message?: string): Promise<void> => {
  * @param item 要重新生成的消息项
  */
 const handleRegenerate = async (item: ChatMessage): Promise<void> => {
-  if (item.role !== "assistant") return;
+  if (item.role !== 'assistant') return;
   // 提示重生成将替换当前消息
   ElMessageBox.confirm(
-    "确认重新生成当前消息吗？这将替换当前消息，且无法撤销。",
-    "确认重新生成",
+    '确认重新生成当前消息吗？这将替换当前消息，且无法撤销。',
+    '确认重新生成',
     {
-      confirmButtonText: "确定",
-      cancelButtonText: "取消",
-      type: "warning",
-    }
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      type: 'warning',
+    },
   )
     .then(async () => {
       // 调用重新生成消息的 API
@@ -286,20 +290,20 @@ const handleRegenerate = async (item: ChatMessage): Promise<void> => {
  * 处理组件源码提取
  */
 const handleExtractCode = (item: ChatMessage): void => {
-  if (item.role !== "assistant") return;
+  if (item.role !== 'assistant') return;
   const sourceCode = extractCode(item.content);
   if (sourceCode) {
     // 复制到剪贴板
     navigator.clipboard
       .writeText(sourceCode)
       .then(() => {
-        ElMessage.success("源码已复制到剪贴板");
+        ElMessage.success('源码已复制到剪贴板');
       })
       .catch(() => {
-        ElMessage.error("复制失败,请手动复制");
+        ElMessage.error('复制失败,请手动复制');
       });
   } else {
-    ElMessage.warning("未提取到组件源码");
+    ElMessage.warning('未提取到组件源码');
   }
 };
 
@@ -307,12 +311,12 @@ const handleExtractCode = (item: ChatMessage): void => {
  * 处理代码预览
  */
 const handlePreview = (item: ChatMessage): void => {
-  if (item.role !== "assistant") return;
+  if (item.role !== 'assistant') return;
   const sourceCode = extractCode(item.content);
   if (sourceCode) {
     previewRef.value?.openDialog(sourceCode);
   } else {
-    ElMessage.warning("未提取到组件源码");
+    ElMessage.warning('未提取到组件源码');
   }
 };
 
@@ -321,7 +325,7 @@ const handlePreview = (item: ChatMessage): void => {
  * @param item 选中的会话项
  */
 const handleConversationSelect = (
-  item: ConversationItem<Conversation>
+  item: ConversationItem<Conversation>,
 ): void => {
   if (item.id === activeConversation.value) return;
   conversationStore.setActiveConversation(item.id);
@@ -345,9 +349,9 @@ const handleConversationCreate = (): void => {
 
   conversationStore.createConversation({
     title: `新对话`,
-    group: "recent",
+    group: 'recent',
   });
-  ElMessage.success("已创建新对话");
+  ElMessage.success('已创建新对话');
   // 滚动到底部
   nextTick(() => {
     scrollToBottom();
@@ -361,42 +365,42 @@ const handleConversationCreate = (): void => {
  */
 function handleMenuCommand(
   command: ConversationMenuCommand,
-  item: ConversationItem<Conversation>
+  item: ConversationItem<Conversation>,
 ) {
-  if (command === "delete") {
+  if (command === 'delete') {
     ElMessageBox.confirm(
       `确定要删除会话 "${item.label}" 吗？此操作不可恢复。`,
-      "确认删除",
+      '确认删除',
       {
-        confirmButtonText: "确定",
-        cancelButtonText: "取消",
-        type: "warning",
-      }
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning',
+      },
     )
       .then(() => {
         conversationStore.deleteConversation(item.id);
-        ElMessage.success("会话已删除");
+        ElMessage.success('会话已删除');
       })
       .catch(() => {
         // 用户取消
       });
   }
 
-  if (command === "rename") {
-    ElMessageBox.prompt("请输入新的会话名称", "重命名会话", {
-      confirmButtonText: "确定",
-      cancelButtonText: "取消",
+  if (command === 'rename') {
+    ElMessageBox.prompt('请输入新的会话名称', '重命名会话', {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
       inputValue: item.label,
       inputValidator: (value: string) => {
         if (!value || !value.trim()) {
-          return "会话名称不能为空";
+          return '会话名称不能为空';
         }
         return true;
       },
     })
       .then(({ value }) => {
         conversationStore.updateConversation(item.id, { title: value.trim() });
-        ElMessage.success("重命名成功");
+        ElMessage.success('重命名成功');
       })
       .catch(() => {
         // 用户取消
@@ -409,22 +413,22 @@ function handleMenuCommand(
  */
 const handleClearChat = (): void => {
   if (!conversationStore.activeConversation) {
-    ElMessage.warning("没有活跃的会话");
+    ElMessage.warning('没有活跃的会话');
     return;
   }
 
   ElMessageBox.confirm(
     `确定要清空会话 "${conversationStore.activeConversation.title}" 的所有对话记录吗？此操作不可恢复。`,
-    "确认清空",
+    '确认清空',
     {
-      confirmButtonText: "确定",
-      cancelButtonText: "取消",
-      type: "warning",
-    }
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      type: 'warning',
+    },
   )
     .then(() => {
       clearMessages();
-      ElMessage.success("对话记录已清空");
+      ElMessage.success('对话记录已清空');
     })
     .catch(() => {
       // 用户取消

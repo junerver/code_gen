@@ -80,6 +80,7 @@
               <div v-if="item.role === 'assistant' && item.reasoningContent">
                 <Thinking
                   auto-collapse
+                  max-width="900px"
                   :content="item.reasoningContent"
                   :status="item.reasoningStatus"
                 />
@@ -145,6 +146,7 @@
       @close="error = undefined"
     />
     <CodePreview ref="previewRef" />
+    <CodeRenderer ref="rendererRef" />
   </div>
 </template>
 
@@ -169,11 +171,13 @@ import type {
   ConversationItem,
   ConversationMenuCommand,
 } from "vue-element-plus-x/types/Conversations";
+import CodeRenderer from "~/components/CodeRenderer.vue";
 import { useChat } from "~/composables/useChat";
 import type { ChatMessage } from "~/types/chat";
 import type { Conversation } from "~/types/conversation";
 
 const previewRef = ref();
+const rendererRef = ref();
 
 // 修改 title
 useHead({
@@ -236,7 +240,7 @@ const formattedMessages = computed<ChatMessage[]>(() => {
       avatar: isUser ? userAvatar : assistantAvatar,
       avatarSize: "32px",
       variant,
-      maxWidth: isUser ? "500px" : "900px",
+      maxWidth: "900px",
     };
   });
 });
@@ -310,7 +314,7 @@ const handlePreview = (item: ChatMessage): void => {
   if (item.role !== "assistant") return;
   const sourceCode = extractCode(item.content);
   if (sourceCode) {
-    previewRef.value?.openDialog(sourceCode);
+    rendererRef.value?.openDialog(sourceCode);
   } else {
     ElMessage.warning("未提取到组件源码");
   }

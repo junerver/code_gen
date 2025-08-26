@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div class="iframe-container">
     <iframe
       ref="iframe"
       :src="codeRendererServer"
@@ -80,4 +80,22 @@ onUnmounted(() => {
 });
 </script>
 
-<style scoped></style>
+<style scoped>
+/**
+ * iframe容器样式
+ * 确保iframe能够正确继承父容器的高度
+ */
+.iframe-container {
+  width: 100%;
+  height: 100%;
+  min-height: 500px; /* 设置最小高度，避免高度塌陷 */
+  display: flex;
+  flex-direction: column;
+}
+
+.iframe-container iframe {
+  flex: 1;
+  border: none;
+  background: #fff;
+}
+</style>

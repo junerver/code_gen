@@ -3,7 +3,7 @@
  * @Author 侯文君
  * @Date 2025-08-18 18:49
  * @LastEditors 侯文君
- * @LastEditTime 2025-08-26 09:35
+ * @LastEditTime 2025-08-26 16:22
  */
 
 import { streamText } from "ai";
@@ -14,7 +14,7 @@ export default defineLazyEventHandler(async () => {
   return defineEventHandler(async (event: any) => {
     const { messages } = await readBody(event);
     const result = streamText({
-      model: siliconflow("deepseek-ai/DeepSeek-R1"), // ollama("qwen2.5:7b")
+      model: siliconflow("Qwen/Qwen3-Coder-30B-A3B-Instruct"), // ollama("qwen2.5:7b")
       system: `
 			你是一个专业的前端开发专家，专门负责生成高质量的Vue3 UI组件代码。
 

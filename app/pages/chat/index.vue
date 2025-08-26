@@ -272,7 +272,7 @@ const handleRegenerate = async (item: ChatMessage): Promise<void> => {
       confirmButtonText: "确定",
       cancelButtonText: "取消",
       type: "warning",
-    }
+    },
   )
     .then(async () => {
       // 调用重新生成消息的 API
@@ -314,7 +314,7 @@ const handlePreview = (item: ChatMessage): void => {
   if (item.role !== "assistant") return;
   const sourceCode = extractCode(item.content);
   if (sourceCode) {
-    rendererRef.value?.openDialog(sourceCode);
+    previewRef.value?.openDialog(sourceCode);
   } else {
     ElMessage.warning("未提取到组件源码");
   }
@@ -325,7 +325,7 @@ const handlePreview = (item: ChatMessage): void => {
  * @param item 选中的会话项
  */
 const handleConversationSelect = (
-  item: ConversationItem<Conversation>
+  item: ConversationItem<Conversation>,
 ): void => {
   if (item.id === activeConversation.value) return;
   conversationStore.setActiveConversation(item.id);
@@ -365,7 +365,7 @@ const handleConversationCreate = (): void => {
  */
 function handleMenuCommand(
   command: ConversationMenuCommand,
-  item: ConversationItem<Conversation>
+  item: ConversationItem<Conversation>,
 ) {
   if (command === "delete") {
     ElMessageBox.confirm(
@@ -375,7 +375,7 @@ function handleMenuCommand(
         confirmButtonText: "确定",
         cancelButtonText: "取消",
         type: "warning",
-      }
+      },
     )
       .then(() => {
         conversationStore.deleteConversation(item.id);
@@ -424,7 +424,7 @@ const handleClearChat = (): void => {
       confirmButtonText: "确定",
       cancelButtonText: "取消",
       type: "warning",
-    }
+    },
   )
     .then(() => {
       clearMessages();

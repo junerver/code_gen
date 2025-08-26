@@ -3,7 +3,7 @@
  * @Author 侯文君
  * @Date 2025-08-20 16:45
  * @LastEditors 侯文君
- * @LastEditTime 2025-08-22 10:04
+ * @LastEditTime 2025-08-26 16:37
  */
 
 import { trimIndent } from "#shared/utils/string";
@@ -246,4 +246,55 @@ export const extractVuePart = (code: string) => {
     script,
     style,
   };
+};
+
+/**
+ * Element Plus 初始化代码
+ * @param elementPlusVersion
+ */
+export const buildElementPlusSetup = (elementPlusVersion: string) => {
+  return `import ElementPlus from 'element-plus'
+import { getCurrentInstance } from 'vue'
+
+let installed = false
+await loadStyle()
+
+export function setupElementPlus() {
+  if (installed) return
+  const instance = getCurrentInstance()
+  instance.appContext.app.use(ElementPlus)
+  installed = true
+}
+
+export function loadStyle() {
+  const styles = [
+    'https://unpkg.com/element-plus@${elementPlusVersion}/dist/index.css',
+    'https://unpkg.com/element-plus@${elementPlusVersion}/theme-chalk/dark/css-vars.css'
+  ].map((style) => {
+    return new Promise((resolve, reject) => {
+      const link = document.createElement('link')
+      link.rel = 'stylesheet'
+      link.href = style
+      link.addEventListener('load', resolve)
+      link.addEventListener('error', reject)
+      document.body.append(link)
+    })
+  })
+  return Promise.allSettled(styles)
+}`.replace(/\$\{elementPlusVersion\}/g, elementPlusVersion);
+};
+
+export const buildHeadHtml = (elementPlusVersion: string) => {
+  return `<link rel="stylesheet" href="https://unpkg.com/element-plus@${elementPlusVersion}/dist/index.css">
+<style>
+  body {
+    margin: 0;
+    padding: 16px;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+  }
+</style>`;
+};
+
+export const buildBodyHtml = () => {
+  return `<div id="app"></div>`;
 };

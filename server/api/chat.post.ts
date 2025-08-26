@@ -3,7 +3,7 @@
  * @Author 侯文君
  * @Date 2025-08-18 18:49
  * @LastEditors 侯文君
- * @LastEditTime 2025-08-25 17:19
+ * @LastEditTime 2025-08-25 19:24
  */
 
 import { streamText } from "ai";
@@ -35,6 +35,7 @@ export default defineLazyEventHandler(async () => {
 			8. 使用Element Plus组件，提升UI一致性
 			9. 代码块顺序：template - script - style
 			10. 显示导入组件、vue的相关api
+			11. 不要使用任何样式预处理器，直接使用原生css
 
 			在生成代码时，请深度理解用户需求，并考虑以下方面：
 			- 组件的输入(props)和输出(events)

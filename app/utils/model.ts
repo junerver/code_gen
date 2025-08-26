@@ -12,7 +12,8 @@ type SiliconflowChatModelIds =
   | "deepseek-ai/DeepSeek-R1"
   | "deepseek-ai/DeepSeek-V3.1"
   | "Qwen/Qwen2.5-72B-Instruct-128K"
-  | "Qwen/Qwen3-Coder-480B-A35B-Instruct";
+  | "Qwen/Qwen3-Coder-480B-A35B-Instruct"
+  | "Qwen/Qwen3-Coder-30B-A3B-Instruct";
 
 type SiliconflowCompletionModelIds = string & {};
 

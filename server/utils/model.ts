@@ -3,7 +3,7 @@
  * @Author 侯文君
  * @Date 2025-08-25 15:37
  * @LastEditors 侯文君
- * @LastEditTime 2025-08-25 17:20
+ * @LastEditTime 2025-08-26 09:35
  */
 
 import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
@@ -27,7 +27,7 @@ export const siliconflow = createOpenAICompatible<
   SiliconflowEmbeddingModelIds,
   SiliconflowImageModelIds
 >({
-  baseURL: "https://api.siliconflow.cn/v1",
-  apiKey: "sk-mzasadcrsrmligxbhiylcaeechgkgebuoweuxdexpilvtsrs",
+  baseURL: useRuntimeConfig().siliconFlowApiUrl,
+  apiKey: useRuntimeConfig().siliconFlowApiKey,
   name: "siliconflow",
 });

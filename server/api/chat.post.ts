@@ -3,11 +3,11 @@
  * @Author 侯文君
  * @Date 2025-08-18 18:49
  * @LastEditors 侯文君
- * @LastEditTime 2025-08-25 19:24
+ * @LastEditTime 2025-08-26 09:35
  */
 
 import { streamText } from "ai";
-import { siliconflow } from "~/utils/model";
+import { siliconflow } from "../utils/model";
 
 export default defineLazyEventHandler(async () => {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

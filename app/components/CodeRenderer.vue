@@ -20,7 +20,7 @@ const dialogVisible = ref(false);
 
 const openDialog = (code: string) => {
   codes.value = {
-    "BizComponent.vue": genPreviewCode(code),
+    'BizComponent.vue': genPreviewCode(code),
   };
   dialogVisible.value = true;
 };

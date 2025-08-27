@@ -1,4 +1,4 @@
-import type { BubbleProps } from "vue-element-plus-x/types/Bubble";
+import type { BubbleProps } from 'vue-element-plus-x/types/Bubble';
 
 /**
  * 气泡聊天消息的数据类型
@@ -11,10 +11,10 @@ export type ChatMessage = BubbleProps & {
   // 消息内容
   content: string;
   // 消息的角色
-  role: "user" | "assistant" | "system";
+  role: 'user' | 'assistant' | 'system';
   timestamp: Date;
   // 推理内容
   reasoningContent?: string;
   // 推理状态
-  reasoningStatus?: "start" | "thinking" | "end" | "error";
+  reasoningStatus?: 'start' | 'thinking' | 'end' | 'error';
 };

@@ -6,15 +6,15 @@
  * @LastEditTime 2025-08-26 16:22
  */
 
-import { streamText } from "ai";
-import { siliconflow } from "../utils/model";
+import { streamText } from 'ai';
+import { siliconflow } from '../utils/model';
 
 export default defineLazyEventHandler(async () => {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return defineEventHandler(async (event: any) => {
     const { messages } = await readBody(event);
     const result = streamText({
-      model: siliconflow("Qwen/Qwen3-Coder-30B-A3B-Instruct"), // ollama("qwen2.5:7b")
+      model: siliconflow('Qwen/Qwen3-Coder-30B-A3B-Instruct'), // ollama("qwen2.5:7b")
       system: `
 			你是一个专业的前端开发专家，专门负责生成高质量的Vue3 UI组件代码。
 

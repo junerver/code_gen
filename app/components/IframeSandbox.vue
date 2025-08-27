@@ -22,11 +22,11 @@ interface Props {
 }
 
 const {
-  codeRendererServer = "http://localhost:3004",
+  codeRendererServer = 'http://localhost:3004',
   codes,
   entryFile,
 } = defineProps<Props>();
-const iframeRef = useTemplateRef<HTMLIFrameElement>("iframe");
+const iframeRef = useTemplateRef<HTMLIFrameElement>('iframe');
 
 /**
  * 向iframe发送消息
@@ -38,16 +38,16 @@ const sendMessage = () => {
   try {
     iframeRef.value.contentWindow?.postMessage(
       {
-        type: "artifacts",
+        type: 'artifacts',
         data: {
           files: JSON.parse(JSON.stringify(codes)),
           entryFile: String(entryFile),
         },
       },
-      codeRendererServer
+      codeRendererServer,
     );
   } catch (error) {
-    console.error("发送消息失败:", error);
+    console.error('发送消息失败:', error);
   }
 };
 const handleMessage = (event: MessageEvent) => {
@@ -57,26 +57,26 @@ const handleMessage = (event: MessageEvent) => {
   }
 
   // iframe加载完成，发送代码数据
-  if (event.data === "IFRAME_LOADED") {
-    console.log("IFRAME_LOADED");
+  if (event.data === 'IFRAME_LOADED') {
+    console.log('IFRAME_LOADED');
     sendMessage();
     // 通知加载成功
   }
   // 处理渲染错误
-  if (event.data.type === "artifacts-error") {
+  if (event.data.type === 'artifacts-error') {
     console.error(event.data.errorMessage);
     //todo: 错误处理
   }
   // 处理渲染成功
-  if (event.data.type === "artifacts-success") {
+  if (event.data.type === 'artifacts-success') {
     // todo: 成功处理
   }
 };
 onMounted(() => {
-  window.addEventListener("message", handleMessage);
+  window.addEventListener('message', handleMessage);
 });
 onUnmounted(() => {
-  window.removeEventListener("message", handleMessage);
+  window.removeEventListener('message', handleMessage);
 });
 </script>
 

@@ -15,7 +15,7 @@ const generateId = (prefix: string): string => {
  * @returns 唯一的消息ID
  */
 export const generateMessageId = (): string => {
-  return generateId("msg");
+  return generateId('msg');
 };
 
 /**
@@ -23,5 +23,5 @@ export const generateMessageId = (): string => {
  * @returns 唯一的会话ID
  */
 export const generateConversationId = (): string => {
-  return generateId("conv");
+  return generateId('conv');
 };

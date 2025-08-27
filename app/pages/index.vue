@@ -14,14 +14,14 @@
 </template>
 
 <script setup lang="ts">
-import { ChatDotRound } from '@element-plus/icons-vue'
+import { ChatDotRound } from '@element-plus/icons-vue';
 
 /**
  * 跳转到聊天页面
  */
 const goToChat = () => {
-  navigateTo('/chat')
-}
+  navigateTo('/chat');
+};
 </script>
 
 <style scoped>

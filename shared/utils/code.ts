@@ -6,7 +6,7 @@
  * @LastEditTime 2025-08-26 16:37
  */
 
-import { trimIndent } from "#shared/utils/string";
+import { trimIndent } from '#shared/utils/string';
 
 /**
  * 从文本内容中提取指定语言的代码块
@@ -22,21 +22,21 @@ export const extractCode = (
 ): string => {
   // 正则表达式匹配代码块，支持可选的语言标识
   const codeRegex = language
-    ? new RegExp(`\`\`\`${language}[\\s\\S]*?\`\`\``, "g")
+    ? new RegExp(`\`\`\`${language}[\\s\\S]*?\`\`\``, 'g')
     : /```[\s\S]*?```/g;
 
   const matches = content.match(codeRegex);
   if (!matches || matches.length <= index) {
-    return "";
+    return '';
   }
 
   // 提取指定索引的代码块中的实际代码内容
   const codeBlock = matches[index];
   // 移除开头的 ```language 或 ``` 和结尾的 ```
   // 添加类型检查，确保codeBlock不为undefined
-  const code = (codeBlock || "")
-    .replace(/^```(?:\w+)?\s*/, "") // 移除开头的```和可选的语言标识
-    .replace(/\s*```$/, ""); // 移除结尾的```
+  const code = (codeBlock || '')
+    .replace(/^```(?:\w+)?\s*/, '') // 移除开头的```和可选的语言标识
+    .replace(/\s*```$/, ''); // 移除结尾的```
 
   return code.trim();
 };
@@ -45,43 +45,43 @@ export const extractCode = (
  * 常用的Vue API列表
  */
 const VUE_APIS = [
-  "ref",
-  "reactive",
-  "computed",
-  "watch",
-  "watchEffect",
-  "onMounted",
-  "onUnmounted",
-  "onUpdated",
-  "onBeforeMount",
-  "onBeforeUnmount",
-  "nextTick",
-  "defineProps",
-  "defineEmits",
-  "defineExpose",
-  "shallowRef",
-  "shallowReactive",
-  "readonly",
-  "shallowReadonly",
-  "toRef",
-  "toRefs",
-  "unref",
-  "isRef",
-  "isReactive",
-  "isReadonly",
-  "isProxy",
-  "provide",
-  "inject",
-  "getCurrentInstance",
-  "useSlots",
-  "useAttrs",
-  "markRaw",
-  "effectScope",
-  "getCurrentScope",
-  "onScopeDispose",
-  "customRef",
-  "triggerRef",
-  "toRaw",
+  'ref',
+  'reactive',
+  'computed',
+  'watch',
+  'watchEffect',
+  'onMounted',
+  'onUnmounted',
+  'onUpdated',
+  'onBeforeMount',
+  'onBeforeUnmount',
+  'nextTick',
+  'defineProps',
+  'defineEmits',
+  'defineExpose',
+  'shallowRef',
+  'shallowReactive',
+  'readonly',
+  'shallowReadonly',
+  'toRef',
+  'toRefs',
+  'unref',
+  'isRef',
+  'isReactive',
+  'isReadonly',
+  'isProxy',
+  'provide',
+  'inject',
+  'getCurrentInstance',
+  'useSlots',
+  'useAttrs',
+  'markRaw',
+  'effectScope',
+  'getCurrentScope',
+  'onScopeDispose',
+  'customRef',
+  'triggerRef',
+  'toRaw',
 ];
 
 /**
@@ -93,9 +93,9 @@ const detectUsedVueApis = (code: string): string[] => {
   const usedApis: string[] = [];
 
   // 检查每个Vue API是否在代码中被使用
-  VUE_APIS.forEach((api) => {
+  VUE_APIS.forEach(api => {
     // 使用正则表达式检查API是否被使用（避免误匹配字符串中的内容）
-    const regex = new RegExp(`\\b${api}\\b`, "g");
+    const regex = new RegExp(`\\b${api}\\b`, 'g');
     if (regex.test(code)) {
       usedApis.push(api);
     }
@@ -116,14 +116,14 @@ const extractExistingVueImports = (script: string): string[] => {
   if (!matches) return [];
 
   const existingApis: string[] = [];
-  matches.forEach((match) => {
+  matches.forEach(match => {
     const apiMatch = match.match(/import\s*{([^}]+)}/);
     if (apiMatch) {
       const apis =
         apiMatch?.[1]
-          ?.split(",")
-          ?.map((api) => api.trim())
-          ?.filter((api) => api.length > 0) || [];
+          ?.split(',')
+          ?.map(api => api.trim())
+          ?.filter(api => api.length > 0) || [];
       existingApis.push(...apis);
     }
   });
@@ -137,9 +137,9 @@ const extractExistingVueImports = (script: string): string[] => {
  * @returns 导入语句字符串
  */
 const generateVueImport = (apis: string[]): string => {
-  if (apis.length === 0) return "";
+  if (apis.length === 0) return '';
 
-  return `import { ${apis.join(", ")} } from 'vue'`;
+  return `import { ${apis.join(', ')} } from 'vue'`;
 };
 
 /**
@@ -148,7 +148,7 @@ const generateVueImport = (apis: string[]): string => {
  * @returns 移除导入语句后的脚本代码
  */
 const removeExistingVueImports = (script: string): string => {
-  return script.replace(/import\s*{[^}]+}\s*from\s*['"]vue['"];?\s*\n?/g, "");
+  return script.replace(/import\s*{[^}]+}\s*from\s*['"]vue['"];?\s*\n?/g, '');
 };
 
 /**
@@ -172,7 +172,7 @@ export const genPreviewCode = (code: string) => {
   const hasElementPlusImport =
     script.includes('from "element-plus"') ||
     script.includes("from 'element-plus'");
-  const hasSetupElementPlus = script.includes("setupElementPlus");
+  const hasSetupElementPlus = script.includes('setupElementPlus');
 
   // 构建增强的脚本
   let enhancedScript = script;
@@ -182,7 +182,7 @@ export const genPreviewCode = (code: string) => {
     if (hasVueImport) {
       // 如果已有导入，合并缺失的API
       const missingApis = usedVueApis.filter(
-        (api) => !existingVueImports.includes(api),
+        api => !existingVueImports.includes(api),
       );
       if (missingApis.length > 0) {
         // 移除原有的导入语句
@@ -237,9 +237,9 @@ export const extractVuePart = (code: string) => {
   const scriptMatch = code.match(scriptRegex);
   const styleMatch = code.match(styleRegex);
 
-  const template = templateMatch?.[1]?.trim() ?? "";
-  const script = scriptMatch?.[1]?.trim() ?? "";
-  const style = styleMatch?.[1]?.trim() ?? "";
+  const template = templateMatch?.[1]?.trim() ?? '';
+  const script = scriptMatch?.[1]?.trim() ?? '';
+  const style = styleMatch?.[1]?.trim() ?? '';
 
   return {
     template,

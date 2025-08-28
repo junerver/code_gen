@@ -12,6 +12,18 @@
 ollama run qwen2.5:7b
 ```
 
+
+
+## 技术栈
+
+全栈框架：[NuxtJs](https://nuxt.com/)
+
+LLM SDK：[ai-sdk](https://ai-sdk.dev/)
+
+前端框架：Vue 3
+
+组件库：[element-plus-x](https://element-plus-x.com/)
+
 ## 使用项目
 
 安装依赖

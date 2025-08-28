@@ -291,7 +291,7 @@ const handleRegenerate = async (item: ChatMessage): Promise<void> => {
  */
 const handleExtractCode = (item: ChatMessage): void => {
   if (item.role !== 'assistant') return;
-  const sourceCode = extractCode(item.content);
+  const sourceCode = genPreviewCode(extractCode(item.content));
   if (sourceCode) {
     // 复制到剪贴板
     navigator.clipboard

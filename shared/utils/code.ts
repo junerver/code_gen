@@ -3,7 +3,7 @@
  * @Author 侯文君
  * @Date 2025-08-20 16:45
  * @LastEditors 侯文君
- * @LastEditTime 2025-08-26 16:37
+ * @LastEditTime 2025-08-28 11:22
  */
 
 import { trimIndent } from '#shared/utils/string';
@@ -168,12 +168,6 @@ export const genPreviewCode = (code: string) => {
   // 提取已存在的Vue导入API
   const existingVueImports = extractExistingVueImports(script);
 
-  // 检查脚本中是否已经包含 Element Plus 的导入和初始化
-  const hasElementPlusImport =
-    script.includes('from "element-plus"') ||
-    script.includes("from 'element-plus'");
-  const hasSetupElementPlus = script.includes('setupElementPlus');
-
   // 构建增强的脚本
   let enhancedScript = script;
 
@@ -199,15 +193,6 @@ export const genPreviewCode = (code: string) => {
     }
   }
 
-  // 如果没有 Element Plus 相关的导入，则添加
-  if (!hasElementPlusImport && !hasSetupElementPlus) {
-    enhancedScript = trimIndent(`
-      import { setupElementPlus } from './element-plus.js'
-      ${enhancedScript}
-      setupElementPlus()
-    `);
-  }
-
   return trimIndent(`
     <template>
     ${template}
@@ -229,17 +214,55 @@ export const genPreviewCode = (code: string) => {
  * @returns 包含提取到的 template、script、style 代码的对象
  */
 export const extractVuePart = (code: string) => {
-  const templateRegex = /<template>([\s\S]*?)<\/template>/;
-  const scriptRegex = /<script setup>([\s\S]*?)<\/script>/;
-  const styleRegex = /<style scoped>([\s\S]*?)<\/style>/;
+  // 使用更精确的匹配方式，确保匹配到最外层的标签
+  // 通过查找标签的开始和结束位置来避免嵌套标签的干扰
 
-  const templateMatch = code.match(templateRegex);
-  const scriptMatch = code.match(scriptRegex);
-  const styleMatch = code.match(styleRegex);
+  /**
+   * 提取指定标签的内容
+   * @param tagName 标签名称
+   * @param attributes 标签属性（可选）
+   * @returns 标签内容
+   */
+  const extractTagContent = (tagName: string, attributes: string = '') => {
+    const openTag = attributes
+      ? `<${tagName}${attributes.startsWith(' ') ? attributes : ' ' + attributes}>`
+      : `<${tagName}>`;
+    const closeTag = `</${tagName}>`;
 
-  const template = templateMatch?.[1]?.trim() ?? '';
-  const script = scriptMatch?.[1]?.trim() ?? '';
-  const style = styleMatch?.[1]?.trim() ?? '';
+    const startIndex = code.indexOf(openTag);
+    if (startIndex === -1) return '';
+
+    const contentStart = startIndex + openTag.length;
+    let depth = 1;
+    let currentIndex = contentStart;
+
+    // 查找匹配的结束标签，处理嵌套情况
+    while (currentIndex < code.length && depth > 0) {
+      const nextOpen = code.indexOf(`<${tagName}`, currentIndex);
+      const nextClose = code.indexOf(closeTag, currentIndex);
+
+      if (nextClose === -1) break;
+
+      if (nextOpen !== -1 && nextOpen < nextClose) {
+        // 遇到嵌套的开始标签
+        depth++;
+        currentIndex = nextOpen + tagName.length + 1;
+      } else {
+        // 遇到结束标签
+        depth--;
+        if (depth === 0) {
+          return code.substring(contentStart, nextClose).trim();
+        }
+        currentIndex = nextClose + closeTag.length;
+      }
+    }
+
+    return '';
+  };
+
+  const template = extractTagContent('template');
+  const script = extractTagContent('script', ' setup');
+  const style = extractTagContent('style', ' scoped');
 
   return {
     template,
@@ -284,17 +307,87 @@ export function loadStyle() {
 }`.replace(/\$\{elementPlusVersion\}/g, elementPlusVersion);
 };
 
+/**
+ * 构建可预览的代码的主函数
+ * @returns 可预览的代码字符串
+ */
+export const buildPlaygroundMain = () => {
+  return `
+<script setup>
+import App from './App.vue'
+import { setupElementPlus } from './element-plus.js'
+setupElementPlus()
+</script>
+
+<template>
+  <App />
+</template>
+`;
+};
+
 export const buildHeadHtml = (elementPlusVersion: string) => {
-  return `<link rel="stylesheet" href="https://unpkg.com/element-plus@${elementPlusVersion}/dist/index.css">
+  return `
+<link rel="stylesheet" href="https://unpkg.com/element-plus@${elementPlusVersion}/dist/index.css">
 <style>
   body {
     margin: 0;
     padding: 16px;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
   }
-</style>`;
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@unocss/runtime"></script>
+<script>
+  window.__unocss = {
+    rules: [],
+    presets: [],
+  }
+</script>`;
 };
 
 export const buildBodyHtml = () => {
   return `<div id="app"></div>`;
+};
+
+/**
+ * 生成导入映射
+ * @param vueVersion Vue 版本号
+ * @param elementPlusVersion Element Plus 版本号
+ * @param elementIconVersion Element Icon 版本号
+ * @returns 导入映射对象
+ */
+export const generateImportMap = (
+  vueVersion: string,
+  elementPlusVersion: string,
+  elementIconVersion: string,
+) => {
+  return {
+    imports: {
+      vue: `https://unpkg.com/vue@${vueVersion}/dist/vue.esm-browser.js`,
+      '@vue/shared': `https://unpkg.com/@vue/shared@${vueVersion}/dist/shared.esm-bundler.js`,
+      'element-plus': `https://unpkg.com/element-plus@${elementPlusVersion}/dist/index.full.min.mjs`,
+      'element-plus/': `https://unpkg.com/element-plus@${elementPlusVersion}/`,
+      '@element-plus/icons-vue': `https://unpkg.com/@element-plus/icons-vue@${elementIconVersion}/dist/index.min.js`,
+    },
+  };
+};
+
+/**
+ * 构建 tsconfig.json 文件
+ * @returns tsconfig.json 字符串
+ */
+export const buildTsconfig = () => {
+  return `{
+  "compilerOptions": {
+    "target": "ESNext",
+    "jsx": "preserve",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "allowImportingTsExtensions": true,
+    "allowJs": true,
+    "checkJs": true
+  },
+  "vueCompilerOptions": {
+    "target": 3.5
+  }
+}`;
 };

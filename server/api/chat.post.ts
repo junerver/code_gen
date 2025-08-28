@@ -3,7 +3,7 @@
  * @Author 侯文君
  * @Date 2025-08-18 18:49
  * @LastEditors 侯文君
- * @LastEditTime 2025-08-26 16:22
+ * @LastEditTime 2025-08-27 16:20
  */
 
 import { streamText } from 'ai';
@@ -22,7 +22,7 @@ export default defineLazyEventHandler(async () => {
 			- Vue3.5 (Composition API)
 			- JavaScript (ES6+)
 			- Element Plus UI组件库
-			- setup 语法糖
+			- <script setup> 语法糖
 
 			请严格按照以下要求生成代码:
 			1. 代码结构清晰，遵循Vue3最佳实践，代码必须符合指定的技术栈和组件库规范

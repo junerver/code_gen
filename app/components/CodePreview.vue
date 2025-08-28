@@ -1,34 +1,24 @@
 <script setup lang="ts">
-import { Sandbox, useStore } from '@vue/repl';
+import { Sandbox, useStore } from "@vue/repl";
 import {
   buildBodyHtml,
   buildElementPlusSetup,
   buildHeadHtml,
-} from '#shared/utils/code';
+  buildPlaygroundMain,
+} from "#shared/utils/code";
 
-const componentCode = ref('');
+const componentCode = ref("");
 const dialogVisible = ref(false);
 
-const elementPlusVersion = '2.10.7';
-const elementIconVersion = '2.3.2';
-const vueVersion = '3.5.19';
-
-// 生成导入映射
-const generateImportMap = () => {
-  return {
-    imports: {
-      vue: `https://unpkg.com/vue@${vueVersion}/dist/vue.esm-browser.js`,
-      '@vue/shared': `https://unpkg.com/@vue/shared@${vueVersion}/dist/shared.esm-bundler.js`,
-      'element-plus': `https://unpkg.com/element-plus@${elementPlusVersion}/dist/index.full.min.mjs`,
-      'element-plus/': `https://unpkg.com/element-plus@${elementPlusVersion}/`,
-      '@element-plus/icons-vue': `https://unpkg.com/@element-plus/icons-vue@${elementIconVersion}/dist/index.min.js`,
-    },
-  };
-};
+const elementPlusVersion = "2.10.7";
+const elementIconVersion = "2.3.2";
+const vueVersion = "3.5.19";
 
 const store = useStore({
   vueVersion: ref(vueVersion),
-  builtinImportMap: ref(generateImportMap()),
+  builtinImportMap: ref(
+    generateImportMap(vueVersion, elementPlusVersion, elementIconVersion)
+  ),
   sfcOptions: ref({
     script: {
       propsDestructure: true,
@@ -51,20 +41,28 @@ watch(
 
     // 设置文件
     store.setFiles({
-      'App.vue': componentCode.value,
-      'element-plus.js': buildElementPlusSetup(elementPlusVersion),
-      'import-map.json': JSON.stringify(generateImportMap(), null, 2),
+      "src/App.vue": componentCode.value,
+      "src/element-plus.js": buildElementPlusSetup(elementPlusVersion),
+      "src/PlaygroundMain.vue": buildPlaygroundMain(),
+      "import-map.json": JSON.stringify(
+        generateImportMap(vueVersion, elementPlusVersion, elementIconVersion),
+        null,
+        2
+      ),
+      "tsconfig.json": buildTsconfig(),
     });
 
     // 设置主文件
-    store.mainFile = 'App.vue';
-    store.activeFilename = 'App.vue';
+    store.mainFile = "src/PlaygroundMain.vue";
+    store.activeFilename = "src/App.vue";
   },
-  { immediate: true },
+  { immediate: true }
 );
 
 const openDialog = (code: string) => {
-  componentCode.value = genPreviewCode(code);
+  const prCode = genPreviewCode(code);
+  console.log("#", prCode);
+  componentCode.value = prCode;
   dialogVisible.value = true;
 };
 

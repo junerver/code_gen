@@ -3,7 +3,7 @@
  * @Author 侯文君
  * @Date 2025-08-20 16:45
  * @LastEditors 侯文君
- * @LastEditTime 2025-08-28 11:22
+ * @LastEditTime 2025-08-28 16:19
  */
 
 import { trimIndent } from '#shared/utils/string';
@@ -382,12 +382,13 @@ export const buildTsconfig = () => {
     "jsx": "preserve",
     "module": "ESNext",
     "moduleResolution": "Bundler",
+    "types": ["element-plus/global.d.ts"],
     "allowImportingTsExtensions": true,
     "allowJs": true,
     "checkJs": true
   },
   "vueCompilerOptions": {
-    "target": 3.5
+    "target": 3.3
   }
 }`;
 };

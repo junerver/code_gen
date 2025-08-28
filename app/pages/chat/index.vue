@@ -146,7 +146,6 @@
       @close="error = undefined"
     />
     <CodePreview ref="previewRef" />
-    <CodeRenderer ref="rendererRef" />
   </div>
 </template>
 
@@ -171,13 +170,11 @@ import type {
   ConversationItem,
   ConversationMenuCommand,
 } from 'vue-element-plus-x/types/Conversations';
-import CodeRenderer from '~/components/CodeRenderer.vue';
 import { useChat } from '~/composables/useChat';
 import type { ChatMessage } from '~/types/chat';
 import type { Conversation } from '~/types/conversation';
 
 const previewRef = ref();
-const rendererRef = ref();
 
 // 修改 title
 useHead({
@@ -291,7 +288,7 @@ const handleRegenerate = async (item: ChatMessage): Promise<void> => {
  */
 const handleExtractCode = (item: ChatMessage): void => {
   if (item.role !== 'assistant') return;
-  const sourceCode = extractCode(item.content);
+  const sourceCode = genPreviewCode(extractCode(item.content));
   if (sourceCode) {
     // 复制到剪贴板
     navigator.clipboard

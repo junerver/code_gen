@@ -41,11 +41,11 @@ code_gen/
 │   │   ├── index.vue     # 主页
 │   │   ├── chat/         # 聊天页面
 │   │   └── history/      # 历史记录
-│   ├── server/           # 服务端API
-│   │   ├── api/          # API路由
-│   │   └── middleware/   # 服务端中间件
 │   └── utils/            # 工具函数
 ├── public/               # 公共静态文件
+├── server/               # 服务端代码
+├── shared/               # 共享代码
+│   └── utils/            # 共享工具函数自动导入
 └── types/                # TypeScript类型定义
 ```
 
@@ -148,7 +148,7 @@ export const useChat = () => {
 export default defineEventHandler(async (event) => {
   try {
     const body = await readBody(event)
-    
+
     // 验证请求数据
     if (!body.message) {
       throw createError({
@@ -159,7 +159,7 @@ export default defineEventHandler(async (event) => {
 
     // 处理业务逻辑
     const response = await processMessage(body.message)
-    
+
     return {
       success: true,
       data: response
@@ -346,8 +346,8 @@ feat(chat): 添加代码生成功能
 - 组件库定制 ：支持Mui、Antd、Element-Plus、Shadcn UI等主流组件库
 - 场景定制 ：支持Landing Pages、邮件模板、管理系统、APP原型等
 - 代码规范定制 ：可自定义代码文件结构、样式方案等
-- AI模型定制 ：支持OpenAI、Claude、DeepSeek、Ollama等多种AI模型 
- 
+- AI模型定制 ：支持OpenAI、Claude、DeepSeek、Ollama等多种AI模型
+
 2. 基础功能
 - 文本/图片转代码 ：支持通过文本描述或图片生成组件代码
 - 代码版本迭代 ：支持查看历史版本，基于任意版本生成新代码

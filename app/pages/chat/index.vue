@@ -86,6 +86,9 @@
                 />
               </div>
             </template>
+            <template #content="{ item }">
+              <XMarkdown :markdown="item.content" class="vp-raw" />
+            </template>
             <template #footer="{ item }">
               <div
                 v-if="item.role === 'assistant' && !item.typing"
@@ -165,16 +168,19 @@ import {
   Conversations,
   Sender,
   Thinking,
+  XMarkdown,
 } from 'vue-element-plus-x';
 import type {
   ConversationItem,
   ConversationMenuCommand,
 } from 'vue-element-plus-x/types/Conversations';
+import type CodePreview from '~/components/CodePreview.vue';
 import { useChat } from '~/composables/useChat';
 import type { ChatMessage } from '~/types/chat';
 import type { Conversation } from '~/types/conversation';
 
-const previewRef = ref();
+const previewRef =
+  useTemplateRef<InstanceType<typeof CodePreview>>('previewRef');
 
 // 修改 title
 useHead({

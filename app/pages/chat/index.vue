@@ -275,7 +275,7 @@ const handleRegenerate = async (item: ChatMessage): Promise<void> => {
       confirmButtonText: '确定',
       cancelButtonText: '取消',
       type: 'warning',
-    },
+    }
   )
     .then(async () => {
       // 调用重新生成消息的 API
@@ -328,7 +328,7 @@ const handlePreview = (item: ChatMessage): void => {
  * @param item 选中的会话项
  */
 const handleConversationSelect = (
-  item: ConversationItem<Conversation>,
+  item: ConversationItem<Conversation>
 ): void => {
   if (item.id === activeConversation.value) return;
   conversationStore.setActiveConversation(item.id);
@@ -368,7 +368,7 @@ const handleConversationCreate = (): void => {
  */
 function handleMenuCommand(
   command: ConversationMenuCommand,
-  item: ConversationItem<Conversation>,
+  item: ConversationItem<Conversation>
 ) {
   if (command === 'delete') {
     ElMessageBox.confirm(
@@ -378,7 +378,7 @@ function handleMenuCommand(
         confirmButtonText: '确定',
         cancelButtonText: '取消',
         type: 'warning',
-      },
+      }
     )
       .then(() => {
         conversationStore.deleteConversation(item.id);
@@ -427,7 +427,7 @@ const handleClearChat = (): void => {
       confirmButtonText: '确定',
       cancelButtonText: '取消',
       type: 'warning',
-    },
+    }
   )
     .then(() => {
       clearMessages();
@@ -636,7 +636,7 @@ body {
   background: rgba(0, 0, 0, 0.1);
   padding: 2px 6px;
   border-radius: 4px;
-  font-family: "Fira Code", "Consolas", monospace;
+  font-family: 'Fira Code', 'Consolas', monospace;
 }
 
 :deep(.Conversations) {

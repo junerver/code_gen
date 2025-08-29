@@ -1,5 +1,7 @@
 {
-    "*.{js,ts,cjs,mjs,d.cts,d.mts,jsx,tsx,json,jsonc}": [
-      "biome format --write --no-errors-on-unmatched",
-    ]
+  "**/*.{js,ts,vue}": [
+    "sh -c 'eslint --cache --fix || true'",
+    "prettier --write"
+  ],
+  "**/*.{json,css,scss,md,html}": "prettier --write --ignore-unknown"
 }

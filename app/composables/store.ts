@@ -118,7 +118,7 @@ export const useStore = (initial: Initial) => {
           propsDestructure: true,
         },
       },
-    }),
+    })
   );
   const store = useReplStore(storeState);
   // 检查 store.files[ELEMENT_PLUS_FILE] 是否存在再设置 hidden 属性
@@ -139,13 +139,13 @@ export const useStore = (initial: Initial) => {
       if (store.files[ELEMENT_PLUS_FILE]) {
         store.files[ELEMENT_PLUS_FILE].code = generateElementPlusCode(
           version,
-          userOptions.styleSource,
+          userOptions.styleSource
         ).trim();
         compileFile(store, store.files[ELEMENT_PLUS_FILE]).then(
-          errs => (store.errors = errs),
+          errs => (store.errors = errs)
         );
       }
-    },
+    }
   );
   watch(
     builtinImportMap,
@@ -156,11 +156,11 @@ export const useStore = (initial: Initial) => {
         store.files[IMPORT_MAP].code = JSON.stringify(
           mergeImportMap(importMap, newBuiltinImportMap),
           undefined,
-          2,
+          2
         );
       }
     },
-    { deep: true },
+    { deep: true }
   );
 
   function generateElementPlusCode(version: string, styleSource?: string) {
@@ -169,11 +169,11 @@ export const useStore = (initial: Initial) => {
       : genCdnLink(
           nightly.value ? '@element-plus/nightly' : 'element-plus',
           version,
-          '/dist/index.css',
+          '/dist/index.css'
         );
     const darkStyle = style.replace(
       '/dist/index.css',
-      '/theme-chalk/dark/css-vars.css',
+      '/theme-chalk/dark/css-vars.css'
     );
     return elementPlusCode
       .replace('#STYLE#', style)
@@ -197,7 +197,7 @@ export const useStore = (initial: Initial) => {
         store.vueVersion,
       ],
       useDebounceFn(() => store.reloadLanguageTools?.(), 300),
-      { deep: true },
+      { deep: true }
     );
   }
   function serialize() {
@@ -231,7 +231,7 @@ export const useStore = (initial: Initial) => {
     if (!files[ELEMENT_PLUS_FILE]) {
       files[ELEMENT_PLUS_FILE] = new File(
         ELEMENT_PLUS_FILE,
-        generateElementPlusCode(versions.elementPlus, userOptions.styleSource),
+        generateElementPlusCode(versions.elementPlus, userOptions.styleSource)
       );
     }
     if (!files[TSCONFIG]) {
@@ -267,9 +267,10 @@ export const useStore = (initial: Initial) => {
 
     const isRandomFile = (filename: string) =>
       ![MAIN_FILE, TSCONFIG, IMPORT_MAP, ELEMENT_PLUS_FILE].includes(filename);
-    // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
-    for (const filename in files)
+    for (const filename in files) {
+      // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
       if (isRandomFile(filename)) delete files[filename];
+    }
 
     const appFile = new File(APP_FILE, welcomeCode, false);
     addFile(appFile);

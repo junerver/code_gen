@@ -1,3 +1,4 @@
+import { fileURLToPath } from 'node:url';
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
   ssr: false,
@@ -7,5 +8,8 @@ export default defineNuxtConfig({
   runtimeConfig: {
     siliconFlowApiUrl: '',
     siliconFlowApiKey: '',
+  },
+  alias: {
+    '#server': fileURLToPath(new URL('./server', import.meta.url)),
   },
 });

@@ -87,7 +87,12 @@
               </div>
             </template>
             <template #content="{ item }">
-              <XMarkdown :markdown="item.content" class="vp-raw" />
+              <XMarkdown
+                v-if="item.role === 'assistant'"
+                :markdown="item.content"
+                class="vp-raw"
+              />
+              <p v-else>{{ item.content }}</p>
             </template>
             <template #footer="{ item }">
               <div

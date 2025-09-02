@@ -55,7 +55,7 @@
       </el-header>
 
       <!-- 聊天主体 -->
-      <el-main class="chat-main">
+      <el-main class="chat-main" :style="chatMainStyle">
         <div ref="messagesContainer" class="messages-container">
           <!-- 空状态 -->
           <div v-if="messages.length === 0" class="empty-state">
@@ -130,8 +130,9 @@
       </el-main>
 
       <!-- 使用 Sender 输入组件 -->
-      <el-footer class="chat-footer">
+      <el-footer ref="chatFooterRef" class="chat-footer">
         <Sender
+          ref="senderRef"
           v-model="inputMessage"
           :disabled="loading"
           :placeholder="'请输入您的问题或代码需求...'"
@@ -139,7 +140,7 @@
           variant="updown"
           clearable
           :auto-size="{
-            maxRows: 5,
+            maxRows: 7,
             minRows: 3,
           }"
           @submit="handleSendMessage"
@@ -175,7 +176,7 @@ import {
   View,
 } from '@element-plus/icons-vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
-import { computed, nextTick, onMounted, ref } from 'vue';
+import { computed, nextTick, onMounted, onUnmounted, ref } from 'vue';
 import {
   BubbleList,
   Conversations,
@@ -216,6 +217,9 @@ const {
 const inputMessage = ref('');
 const messagesContainer = ref<HTMLElement>();
 const bubbleListRef = ref();
+const senderRef = ref();
+const chatFooterRef = ref<HTMLElement>();
+const senderHeight = ref(170); // 默认最小高度
 
 // 从store获取会话相关数据
 const conversations = computed<ConversationItem<Conversation>[]>(() => {
@@ -459,6 +463,34 @@ const scrollToBottom = async (): Promise<void> => {
   bubbleListRef.value?.scrollToBottom();
 };
 
+// 监听 Sender 高度变化
+const observeSenderHeight = () => {
+  if (!chatFooterRef.value) return;
+
+  const resizeObserver = new ResizeObserver(entries => {
+    for (const entry of entries) {
+      const { height } = entry.contentRect;
+      senderHeight.value = Math.max(height, 170); // 确保最小高度为170px
+    }
+  });
+
+  resizeObserver.observe(chatFooterRef.value);
+
+  // 组件卸载时清理观察器
+  onUnmounted(() => {
+    resizeObserver.disconnect();
+  });
+};
+
+// 计算 chat-main 的动态高度
+const chatMainStyle = computed(() => {
+  const headerHeight = 70; // chat-header 固定高度
+  const footerHeight = senderHeight.value; // 动态的 footer 高度
+  return {
+    height: `calc(100vh - ${headerHeight + footerHeight}px)`,
+  };
+});
+
 // 组件挂载时初始化
 onMounted(() => {
   // 如果没有会话，创建默认会话
@@ -469,6 +501,8 @@ onMounted(() => {
   // 滚动到底部
   nextTick(() => {
     scrollToBottom();
+    // 初始化高度观察器
+    observeSenderHeight();
   });
 });
 </script>
@@ -560,11 +594,11 @@ body {
 }
 
 .chat-main {
-  flex: 1;
   padding: 24px;
   overflow: hidden;
   min-height: 0;
-  /* 让 chat-main 根据 footer 的实际高度动态调整 */
+  transition: height 0.2s ease-in-out;
+  /* 移除 flex: 1，改用动态计算的高度 */
 }
 
 .messages-container {
@@ -600,10 +634,12 @@ body {
   border-top: 1px solid #e4e7ed;
   padding: 24px;
   min-height: 170px; /* 确保至少显示3行文字的基础高度 */
+  height: auto; /* 允许根据内容自动调整高度 */
   flex-shrink: 0;
   overflow: visible;
   display: flex;
   flex-direction: column;
+  transition: height 0.2s ease-in-out;
 }
 
 .message-sender {

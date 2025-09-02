@@ -21,16 +21,16 @@
         <div class="model-list">
           <div
             v-for="model in AvailableModels"
-            :key="model.id"
+            :key="model.name"
             class="model-item"
-            :class="{ active: modelValue === model.id }"
-            @click="selectModel(model.id)"
+            :class="{ active: modelValue === model.name }"
+            @click="selectModel(model.name)"
           >
             <div class="model-info">
               <div class="model-name">{{ model.name }}</div>
               <div class="model-description">{{ model.description }}</div>
             </div>
-            <el-icon v-if="modelValue === model.id" class="check-icon">
+            <el-icon v-if="modelValue === model.name" class="check-icon">
               <Check />
             </el-icon>
           </div>
@@ -43,16 +43,13 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue';
 import { ArrowDown, Check } from '@element-plus/icons-vue';
-import {
-  type SiliconflowChatModelIds,
-  AvailableModels,
-} from '#shared/types/model';
+import { AvailableModels, DefaultSelectModel } from '#shared/types/model';
 
 /**
- * 双向绑定的模型值
+ * 双向绑定的模型名称
  */
-const modelValue = defineModel<SiliconflowChatModelIds>({
-  default: 'Qwen/Qwen3-Coder-30B-A3B-Instruct',
+const modelValue = defineModel<string>({
+  default: DefaultSelectModel,
 });
 
 /**
@@ -65,16 +62,16 @@ const showPopover = ref(false);
  */
 const selectedModelDisplay = computed(() => {
   if (!modelValue.value) return null;
-  const model = AvailableModels.find(m => m.id === modelValue.value);
+  const model = AvailableModels.find(m => m.name === modelValue.value);
   return model?.name || modelValue.value;
 });
 
 /**
  * 选择模型
- * @param modelId 模型ID
+ * @param modelName 模型名称
  */
-const selectModel = (modelId: SiliconflowChatModelIds) => {
-  modelValue.value = modelId;
+const selectModel = (modelName: string) => {
+  modelValue.value = modelName;
   showPopover.value = false; // 选择后自动关闭popover
 };
 </script>

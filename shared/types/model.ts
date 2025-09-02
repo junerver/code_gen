@@ -11,11 +11,13 @@ export type SiliconflowEmbeddingModelIds = string & {};
 
 export type SiliconflowImageModelIds = string & {};
 
+export const DefaultSelectModel = 'Qwen3-Coder-30B';
+
 /**
  * 可用模型列表配置
  */
 interface ModelOption {
-  id: SiliconflowChatModelIds;
+  id: SiliconflowChatModelIds | string;
   name: string;
   description: string;
 }
@@ -45,5 +47,10 @@ export const AvailableModels: ModelOption[] = [
     id: 'Qwen/Qwen3-Coder-30B-A3B-Instruct',
     name: 'Qwen3-Coder-30B',
     description: '轻量级代码生成模型',
+  },
+  {
+    id: 'qwen2.5:7b',
+    name: 'Qwen2.5-7B',
+    description: '本地ollama模型',
   },
 ];

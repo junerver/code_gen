@@ -3,7 +3,7 @@
  * @Author 侯文君
  * @Date 2025-08-25 15:37
  * @LastEditors 侯文君
- * @LastEditTime 2025-09-02 13:25
+ * @LastEditTime 2025-09-02 17:33
  */
 
 import { createOpenAICompatible } from '@ai-sdk/openai-compatible';
@@ -13,6 +13,8 @@ import type {
   SiliconflowEmbeddingModelIds,
   SiliconflowImageModelIds,
 } from '#shared/types/model';
+import { customProvider } from 'ai';
+import { ollama } from 'ollama-ai-provider-v2';
 
 export const siliconflow = createOpenAICompatible<
   SiliconflowChatModelIds,
@@ -23,4 +25,18 @@ export const siliconflow = createOpenAICompatible<
   baseURL: useRuntimeConfig().siliconFlowApiUrl,
   apiKey: useRuntimeConfig().siliconFlowApiKey,
   name: 'siliconflow',
+});
+
+/**
+ * 自定义的模型提供器，所有可用模型通过模型提供器获取
+ */
+export const modelProvider = customProvider({
+  languageModels: {
+    'Qwen3-Coder-30B': siliconflow('Qwen/Qwen3-Coder-30B-A3B-Instruct'),
+    'Qwen3-Coder-480B': siliconflow('Qwen/Qwen3-Coder-480B-A35B-Instruct'),
+    'Qwen2.5-72B': siliconflow('Qwen/Qwen2.5-72B-Instruct-128K'),
+    'DeepSeek-R1': siliconflow('deepseek-ai/DeepSeek-R1'),
+    'DeepSeek-V3.1': siliconflow('deepseek-ai/DeepSeek-V3.1'),
+    'Qwen2.5-7B': ollama('qwen2.5:7b'),
+  },
 });

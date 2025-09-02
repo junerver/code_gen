@@ -1,8 +1,8 @@
 import { computed, readonly, ref } from 'vue';
 import type { ChatMessage } from '~/types/chat';
-import type { SiliconflowChatModelIds } from '#shared/types/model';
 import type { IConversationRepository } from '~/types/conv-repos';
 import { PiniaConversationRepository } from '~/utils/pinia-conv-repos';
+import { DefaultSelectModel } from '#shared/types/model';
 
 /**
  * 聊天功能组合式函数
@@ -14,10 +14,8 @@ export const useChat = (repository?: IConversationRepository) => {
   const conversationStore = repository || new PiniaConversationRepository();
   const loading = ref(false);
   const error = ref<string | undefined>();
-  // 模型选择
-  const selectedModel = ref<SiliconflowChatModelIds>(
-    'Qwen/Qwen3-Coder-30B-A3B-Instruct'
-  );
+  // 模型选择，填入的是模型的名称，对应在模型提供器中的命名
+  const selectedModel = ref<string>(DefaultSelectModel);
 
   // 从store获取当前会话的消息
   const messages = computed(() => conversationStore.activeMessages);

@@ -10,24 +10,24 @@ import type {
  * 会话状态管理
  */
 export const useConversationStore = defineStore('conversation', () => {
-  // 状态
+  // 会话列表
   const conversations = ref<Conversation[]>([]);
+  // 活跃会话ID
   const activeConversationId = ref<string>('');
+  // 会话消息映射
   const conversationMessages = ref<Map<string, ChatMessage[]>>(new Map());
-  const loading = ref(false);
-  const error = ref<string | undefined>();
 
-  // 计算属性
+  // 计算属性-当前活跃的会话
   const activeConversation = computed<Conversation | undefined>(() => {
     return conversations.value.find(
-      conv => conv.id === activeConversationId.value,
+      conv => conv.id === activeConversationId.value
     );
   });
-
+  // 计算属性-活跃的消息列表
   const activeMessages = computed<ChatMessage[]>(() => {
     return conversationMessages.value.get(activeConversationId.value) || [];
   });
-
+  // 计算属性-会话数量
   const conversationCount = computed<number>(() => conversations.value.length);
 
   /**
@@ -36,7 +36,7 @@ export const useConversationStore = defineStore('conversation', () => {
    * @returns 新创建的会话
    */
   const createConversation = (
-    params: CreateConversationParams = {},
+    params: CreateConversationParams = {}
   ): Conversation => {
     const now = new Date();
     const conversation: Conversation = {
@@ -62,7 +62,7 @@ export const useConversationStore = defineStore('conversation', () => {
    */
   const updateConversation = (
     id: string,
-    params: UpdateConversationParams,
+    params: UpdateConversationParams
   ): void => {
     const index = conversations.value.findIndex(conv => conv.id === id);
     if (index > -1) {
@@ -120,7 +120,7 @@ export const useConversationStore = defineStore('conversation', () => {
 
     // 更新会话的最后消息和更新时间
     const conversation = conversations.value.find(
-      conv => conv.id === conversationId,
+      conv => conv.id === conversationId
     );
     if (conversation) {
       conversation.lastMessage =
@@ -141,7 +141,7 @@ export const useConversationStore = defineStore('conversation', () => {
     conversationId: string,
     messageId: string,
     content: string,
-    done: boolean = false,
+    done: boolean = false
   ): void => {
     const messages = conversationMessages.value.get(conversationId) || [];
     const messageIndex = messages.findIndex(msg => msg.id === messageId);
@@ -171,7 +171,7 @@ export const useConversationStore = defineStore('conversation', () => {
     conversationId: string,
     messageId: string,
     reasoningContent: string,
-    reasoningStatus?: ChatMessage['reasoningStatus'],
+    reasoningStatus?: ChatMessage['reasoningStatus']
   ): void => {
     const messages = conversationMessages.value.get(conversationId) || [];
     const messageIndex = messages.findIndex(msg => msg.id === messageId);
@@ -208,7 +208,7 @@ export const useConversationStore = defineStore('conversation', () => {
 
     // 更新会话信息
     const conversation = conversations.value.find(
-      conv => conv.id === conversationId,
+      conv => conv.id === conversationId
     );
     if (conversation) {
       conversation.lastMessage = undefined;
@@ -285,7 +285,6 @@ export const useConversationStore = defineStore('conversation', () => {
     conversations.value = [];
     activeConversationId.value = '';
     conversationMessages.value.clear();
-    error.value = undefined;
   };
 
   return {
@@ -295,8 +294,6 @@ export const useConversationStore = defineStore('conversation', () => {
     activeConversation,
     activeMessages,
     conversationCount,
-    loading: readonly(loading),
-    error: readonly(error),
 
     // 方法
     createConversation,

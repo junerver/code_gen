@@ -8,9 +8,11 @@ import type { SiliconflowChatModelIds } from '#shared/types/model';
  * @returns 聊天相关的状态和方法
  */
 export const useChat = () => {
+  // 获取会话存储
   const conversationStore = useConversationStore();
   const loading = ref(false);
   const error = ref<string | undefined>();
+  // 模型选择
   const selectedModel = ref<SiliconflowChatModelIds>(
     'Qwen/Qwen3-Coder-30B-A3B-Instruct'
   );
@@ -35,7 +37,7 @@ export const useChat = () => {
       conversationStore.activeConversationId
     );
     const isFirstMessage = currentMessages.length === 0;
-
+    // 构建用户消息
     const message: ChatMessage = {
       id: generateMessageId(),
       content,
@@ -45,6 +47,7 @@ export const useChat = () => {
       isMarkdown: false,
       shape: 'corner',
     };
+    // 存储用户消息到会话中
     conversationStore.addMessage(
       conversationStore.activeConversationId,
       message
@@ -55,6 +58,7 @@ export const useChat = () => {
       // 截取前30个字符作为标题，避免标题过长
       const title =
         content.length > 30 ? content.slice(0, 30) + '...' : content;
+      // 更新会话标题
       conversationStore.updateConversation(
         conversationStore.activeConversationId,
         { title }
@@ -203,7 +207,7 @@ export const useChat = () => {
   };
 
   /**
-   * 发送消息
+   * 发送消息到服务器
    * @param content 消息内容
    */
   const sendMessage = async (content: string): Promise<void> => {

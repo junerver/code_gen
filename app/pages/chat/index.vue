@@ -138,6 +138,10 @@
           class="message-sender"
           variant="updown"
           clearable
+          :auto-size="{
+            maxRows: 5,
+            minRows: 3,
+          }"
           @submit="handleSendMessage"
         >
           <template #prefix>
@@ -560,6 +564,7 @@ body {
   padding: 24px;
   overflow: hidden;
   min-height: 0;
+  /* 让 chat-main 根据 footer 的实际高度动态调整 */
 }
 
 .messages-container {
@@ -594,12 +599,18 @@ body {
   backdrop-filter: blur(10px);
   border-top: 1px solid #e4e7ed;
   padding: 24px;
-  height: 120px;
+  min-height: 170px; /* 确保至少显示3行文字的基础高度 */
   flex-shrink: 0;
+  overflow: visible;
+  display: flex;
+  flex-direction: column;
 }
 
 .message-sender {
   width: 100%;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
 }
 
 .send-tip {

@@ -1,15 +1,17 @@
 import { computed, readonly, ref } from 'vue';
-import { useConversationStore } from '~/stores/conversation';
 import type { ChatMessage } from '~/types/chat';
 import type { SiliconflowChatModelIds } from '#shared/types/model';
+import type { IConversationRepository } from '~/types/conv-repos';
+import { PiniaConversationRepository } from '~/utils/pinia-conv-repos';
 
 /**
  * 聊天功能组合式函数
+ * @param repository 会话存储仓库实例，用于管理会话和消息数据
  * @returns 聊天相关的状态和方法
  */
-export const useChat = () => {
-  // 获取会话存储
-  const conversationStore = useConversationStore();
+export const useChat = (repository?: IConversationRepository) => {
+  // 获取会话存储 - 支持依赖注入，优先使用传入的repository
+  const conversationStore = repository || new PiniaConversationRepository();
   const loading = ref(false);
   const error = ref<string | undefined>();
   // 模型选择
@@ -359,8 +361,8 @@ export const useChat = () => {
     error: readonly(error),
     selectedModel,
 
-    // 会话store引用
-    conversationStore,
+    // 会话仓库引用（接口类型）
+    repository: conversationStore,
 
     // 方法
     sendMessage,

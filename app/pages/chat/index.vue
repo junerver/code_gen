@@ -189,6 +189,7 @@ import type {
   ConversationMenuCommand,
 } from 'vue-element-plus-x/types/Conversations';
 import type CodePreview from '~/components/CodePreview.vue';
+import { PiniaConversationRepository } from '~/utils/pinia-conv-repos';
 import { useChat } from '~/composables/useChat';
 import type { ChatMessage } from '~/types/chat';
 import type { Conversation } from '~/types/conversation';
@@ -201,6 +202,8 @@ useHead({
   title: 'AI代码生成助手',
 });
 
+const conversationStore = new PiniaConversationRepository();
+
 // 使用聊天功能
 const {
   messages,
@@ -210,7 +213,6 @@ const {
   sendMessage,
   clearMessages,
   regenerate,
-  conversationStore,
 } = useChat();
 
 // 响应式数据

@@ -1,6 +1,7 @@
 import { computed, readonly, ref } from 'vue';
 import { useConversationStore } from '~/stores/conversation';
 import type { ChatMessage } from '~/types/chat';
+import type { SiliconflowChatModelIds } from '#shared/types/model';
 
 /**
  * 聊天功能组合式函数
@@ -10,11 +11,14 @@ export const useChat = () => {
   const conversationStore = useConversationStore();
   const loading = ref(false);
   const error = ref<string | undefined>();
+  const selectedModel = ref<SiliconflowChatModelIds>(
+    'Qwen/Qwen3-Coder-30B-A3B-Instruct'
+  );
 
   // 从store获取当前会话的消息
   const messages = computed(() => conversationStore.activeMessages);
   const activeConversation = computed(
-    () => conversationStore.activeConversation,
+    () => conversationStore.activeConversation
   );
 
   /**
@@ -28,7 +32,7 @@ export const useChat = () => {
 
     // 检查是否为该会话的第一条消息
     const currentMessages = conversationStore.getMessages(
-      conversationStore.activeConversationId,
+      conversationStore.activeConversationId
     );
     const isFirstMessage = currentMessages.length === 0;
 
@@ -43,7 +47,7 @@ export const useChat = () => {
     };
     conversationStore.addMessage(
       conversationStore.activeConversationId,
-      message,
+      message
     );
 
     // 如果是第一条消息，更新会话标题
@@ -53,7 +57,7 @@ export const useChat = () => {
         content.length > 30 ? content.slice(0, 30) + '...' : content;
       conversationStore.updateConversation(
         conversationStore.activeConversationId,
-        { title },
+        { title }
       );
     }
   };
@@ -79,7 +83,7 @@ export const useChat = () => {
     };
     conversationStore.addMessage(
       conversationStore.activeConversationId,
-      message,
+      message
     );
     return message.id;
   };
@@ -93,14 +97,14 @@ export const useChat = () => {
   const updateAssistantMessage = (
     messageId: string,
     content: string,
-    done: boolean = false,
+    done: boolean = false
   ): void => {
     if (conversationStore.activeConversationId) {
       conversationStore.updateMessage(
         conversationStore.activeConversationId,
         messageId,
         content,
-        done,
+        done
       );
     }
   };
@@ -111,7 +115,7 @@ export const useChat = () => {
    * @returns 生成的回复内容
    */
   const generateResponse = async (
-    assistantMessageId: string,
+    assistantMessageId: string
   ): Promise<string> => {
     // 调用流式API
     const response = await fetch('/api/chat', {
@@ -120,6 +124,7 @@ export const useChat = () => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
+        model: selectedModel.value || 'Qwen/Qwen3-Coder-30B-A3B-Instruct',
         messages: messages.value.map(msg => ({
           role: msg.role,
           content: msg.content,
@@ -164,7 +169,7 @@ export const useChat = () => {
                 conversationStore.activeConversationId,
                 assistantMessageId,
                 reasoningContent,
-                'start',
+                'start'
               );
             }
             if (data.type === 'reasoning-delta' && data.delta) {
@@ -173,7 +178,7 @@ export const useChat = () => {
                 conversationStore.activeConversationId,
                 assistantMessageId,
                 reasoningContent,
-                'thinking',
+                'thinking'
               );
             }
             if (data.type === 'text-start' && reasoningContent) {
@@ -181,7 +186,7 @@ export const useChat = () => {
                 conversationStore.activeConversationId,
                 assistantMessageId,
                 reasoningContent,
-                'end',
+                'end'
               );
             }
           } catch (parseError) {
@@ -223,7 +228,7 @@ export const useChat = () => {
       // 如果出错，处理助手消息状态
       if (conversationStore.activeConversationId) {
         const currentMessages = conversationStore.getMessages(
-          conversationStore.activeConversationId,
+          conversationStore.activeConversationId
         );
         const lastMessage = currentMessages[currentMessages.length - 1];
         if (currentMessages.length > 0 && lastMessage?.role === 'assistant') {
@@ -231,7 +236,7 @@ export const useChat = () => {
             // 如果消息为空，删除消息
             conversationStore.deleteMessage(
               conversationStore.activeConversationId,
-              lastMessage.id,
+              lastMessage.id
             );
           } else {
             // 如果消息有内容，确保typing和loading状态为false
@@ -239,7 +244,7 @@ export const useChat = () => {
               conversationStore.activeConversationId,
               lastMessage.id,
               lastMessage.content,
-              true,
+              true
             );
           }
         }
@@ -262,12 +267,12 @@ export const useChat = () => {
     try {
       // 获取当前会话的所有消息
       const currentMessages = conversationStore.getMessages(
-        conversationStore.activeConversationId,
+        conversationStore.activeConversationId
       );
 
       // 找到指定消息的索引
       const messageIndex = currentMessages.findIndex(
-        msg => msg.id === messageId,
+        msg => msg.id === messageId
       );
       if (messageIndex === -1) {
         throw new Error('未找到指定的消息');
@@ -278,7 +283,7 @@ export const useChat = () => {
       for (const msg of messagesToDelete) {
         conversationStore.deleteMessage(
           conversationStore.activeConversationId,
-          msg.id,
+          msg.id
         );
       }
 
@@ -294,7 +299,7 @@ export const useChat = () => {
       // 如果出错，处理助手消息状态
       if (conversationStore.activeConversationId) {
         const currentMessages = conversationStore.getMessages(
-          conversationStore.activeConversationId,
+          conversationStore.activeConversationId
         );
         const lastMessage = currentMessages[currentMessages.length - 1];
         if (currentMessages.length > 0 && lastMessage?.role === 'assistant') {
@@ -302,14 +307,14 @@ export const useChat = () => {
             // 如果消息为空，删除消息
             conversationStore.deleteMessage(
               conversationStore.activeConversationId,
-              lastMessage.id,
+              lastMessage.id
             );
           } else {
             // 如果消息有内容，确保typing和loading状态为false
             conversationStore.updateMessage(
               conversationStore.activeConversationId,
               lastMessage.id,
-              lastMessage.content,
+              lastMessage.content
             );
           }
         }
@@ -337,7 +342,7 @@ export const useChat = () => {
     if (conversationStore.activeConversationId) {
       conversationStore.deleteMessage(
         conversationStore.activeConversationId,
-        messageId,
+        messageId
       );
     }
   };
@@ -348,6 +353,7 @@ export const useChat = () => {
     activeConversation,
     loading: readonly(loading),
     error: readonly(error),
+    selectedModel,
 
     // 会话store引用
     conversationStore,

@@ -139,7 +139,11 @@
           variant="updown"
           clearable
           @submit="handleSendMessage"
-        />
+        >
+          <template #prefix>
+            <ModelSelect v-model="selectedModel" />
+          </template>
+        </Sender>
       </el-footer>
     </div>
 
@@ -197,6 +201,7 @@ const {
   messages,
   loading,
   error,
+  selectedModel,
   sendMessage,
   clearMessages,
   regenerate,

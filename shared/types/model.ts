@@ -1,3 +1,14 @@
+/**
+ * @Description model.ts
+ * @Author 侯文君
+ * @Date 2025-09-02 12:37
+ * @LastEditors 侯文君
+ * @LastEditTime 2025-09-03 10:20
+ */
+
+/**
+ * 硅基流动模型ID
+ */
 export type SiliconflowChatModelIds =
   | 'deepseek-ai/DeepSeek-R1'
   | 'deepseek-ai/DeepSeek-V3.1'
@@ -11,18 +22,13 @@ export type SiliconflowEmbeddingModelIds = string & {};
 
 export type SiliconflowImageModelIds = string & {};
 
-export const DefaultSelectModel = 'Qwen3-Coder-30B';
+// 默认使用的模型
+export const DEFAULT_MODEL = 'Qwen3-Coder-30B';
 
 /**
- * 可用模型列表配置
+ * 可用模型列表
  */
-interface ModelOption {
-  id: SiliconflowChatModelIds | string;
-  name: string;
-  description: string;
-}
-
-export const AvailableModels: ModelOption[] = [
+export const AvailableModels = [
   {
     id: 'deepseek-ai/DeepSeek-R1',
     name: 'DeepSeek-R1',
@@ -51,6 +57,16 @@ export const AvailableModels: ModelOption[] = [
   {
     id: 'qwen2.5:7b',
     name: 'Qwen2.5-7B',
-    description: '本地ollama模型',
+    description: '本地ollama模型，支持32K上下文',
   },
-];
+  {
+    id: 'qwen3:4b',
+    name: 'Qwen3-4B',
+    description: '本地ollama模型，支持256K上下文',
+  },
+] as const;
+
+/**
+ * 全部可用的模型名称类型
+ */
+export type AvailableModelNames = (typeof AvailableModels)[number]['name'];

@@ -3,7 +3,7 @@
  * @Author 侯文君
  * @Date 2025-08-25 15:37
  * @LastEditors 侯文君
- * @LastEditTime 2025-09-02 17:33
+ * @LastEditTime 2025-09-03 10:00
  */
 
 import { createOpenAICompatible } from '@ai-sdk/openai-compatible';
@@ -16,6 +16,9 @@ import type {
 import { customProvider } from 'ai';
 import { ollama } from 'ollama-ai-provider-v2';
 
+/**
+ * 硅基流动模型封装
+ */
 export const siliconflow = createOpenAICompatible<
   SiliconflowChatModelIds,
   SiliconflowCompletionModelIds,
@@ -38,5 +41,6 @@ export const modelProvider = customProvider({
     'DeepSeek-R1': siliconflow('deepseek-ai/DeepSeek-R1'),
     'DeepSeek-V3.1': siliconflow('deepseek-ai/DeepSeek-V3.1'),
     'Qwen2.5-7B': ollama('qwen2.5:7b'),
+    'Qwen3-4B': ollama('qwen3:4b'),
   },
 });

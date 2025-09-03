@@ -40,7 +40,7 @@
     "@nuxt/eslint": "1.8.0",
     "@types/semver": "^7.7.0",
     "@unocss/nuxt": "^66.5.0",
-    "eslint": "^9.33.0",
+    "eslint": "^9.34.0",
     "husky": "^8.0.0",
     "lint-staged": "^16.1.5",
     "typescript": "^5.9.2",

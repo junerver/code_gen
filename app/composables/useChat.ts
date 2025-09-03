@@ -2,7 +2,7 @@ import { computed, readonly, ref } from 'vue';
 import type { ChatMessage } from '~/types/chat';
 import type { IConversationRepository } from '~/types/conv-repos';
 import { PiniaConversationRepository } from '~/utils/pinia-conv-repos';
-import { DefaultSelectModel } from '#shared/types/model';
+import { type AvailableModelNames, DEFAULT_MODEL } from '#shared/types/model';
 
 /**
  * 聊天功能组合式函数
@@ -15,7 +15,7 @@ export const useChat = (repository?: IConversationRepository) => {
   const loading = ref(false);
   const error = ref<string | undefined>();
   // 模型选择，填入的是模型的名称，对应在模型提供器中的命名
-  const selectedModel = ref<string>(DefaultSelectModel);
+  const selectedModel = ref<AvailableModelNames>(DEFAULT_MODEL);
 
   // 从store获取当前会话的消息
   const messages = computed(() => conversationStore.activeMessages);
@@ -128,7 +128,7 @@ export const useChat = (repository?: IConversationRepository) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: selectedModel.value || 'Qwen/Qwen3-Coder-30B-A3B-Instruct',
+        model: selectedModel.value,
         messages: messages.value.map(msg => ({
           role: msg.role,
           content: msg.content,
@@ -148,6 +148,7 @@ export const useChat = (repository?: IConversationRepository) => {
     const decoder = new TextDecoder();
     let accumulatedContent = '';
     let reasoningContent = '';
+    let toolsCallingContent = '';
 
     while (true) {
       const { done, value } = await reader.read();
@@ -167,6 +168,7 @@ export const useChat = (repository?: IConversationRepository) => {
               accumulatedContent += data.delta;
               updateAssistantMessage(assistantMessageId, accumulatedContent);
             }
+            // 处理 reasoning 的 text-delta 类型数据（推理）
             if (data.type === 'reasoning-start' && data.delta) {
               reasoningContent = '';
               conversationStore.updateMessageReasoning(
@@ -176,6 +178,7 @@ export const useChat = (repository?: IConversationRepository) => {
                 'start'
               );
             }
+            // 推理正文
             if (data.type === 'reasoning-delta' && data.delta) {
               reasoningContent += data.delta;
               conversationStore.updateMessageReasoning(
@@ -185,6 +188,7 @@ export const useChat = (repository?: IConversationRepository) => {
                 'thinking'
               );
             }
+            // 正式响应时推理结束
             if (data.type === 'text-start' && reasoningContent) {
               conversationStore.updateMessageReasoning(
                 conversationStore.activeConversationId,
@@ -192,6 +196,26 @@ export const useChat = (repository?: IConversationRepository) => {
                 reasoningContent,
                 'end'
               );
+            }
+            if (data.type === 'tool-input-start') {
+              // 工具开始执行，清空工具消息
+              accumulatedContent += `\n> #### 工具调用：\n> - 开始执行工具调用：\`${data.toolName}\``;
+              updateAssistantMessage(assistantMessageId, accumulatedContent);
+              toolsCallingContent = '';
+            }
+            if (data.type === 'tool-input-delta') {
+              // 拼接工具输入参数的delta
+              toolsCallingContent += data.inputTextDelta;
+            }
+            if (data.type === 'tool-input-available') {
+              // 执行工具调用
+              accumulatedContent += `\n> - 工具输入参数：\`${toolsCallingContent}\``;
+              updateAssistantMessage(assistantMessageId, accumulatedContent);
+            }
+            if (data.type === 'tool-output-available') {
+              // 工具调用完毕，拼接工具输出
+              accumulatedContent += `\n> - 工具调用结果：${data.isError ? '**错误**' : '**成功**'}\n\n`;
+              updateAssistantMessage(assistantMessageId, accumulatedContent);
             }
           } catch (parseError) {
             console.warn('解析流数据失败:', parseError, '原始行:', line);

@@ -43,13 +43,17 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue';
 import { ArrowDown, Check } from '@element-plus/icons-vue';
-import { AvailableModels, DefaultSelectModel } from '#shared/types/model';
+import {
+  type AvailableModelNames,
+  AvailableModels,
+  DEFAULT_MODEL,
+} from '#shared/types/model';
 
 /**
  * 双向绑定的模型名称
  */
-const modelValue = defineModel<string>({
-  default: DefaultSelectModel,
+const modelValue = defineModel<AvailableModelNames>({
+  default: DEFAULT_MODEL,
 });
 
 /**
@@ -70,7 +74,7 @@ const selectedModelDisplay = computed(() => {
  * 选择模型
  * @param modelName 模型名称
  */
-const selectModel = (modelName: string) => {
+const selectModel = (modelName: AvailableModelNames) => {
   modelValue.value = modelName;
   showPopover.value = false; // 选择后自动关闭popover
 };

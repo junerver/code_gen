@@ -19,7 +19,7 @@ import { ollama } from 'ollama-ai-provider-v2';
 /**
  * 硅基流动模型封装
  */
-export const siliconflow = createOpenAICompatible<
+const siliconflow = createOpenAICompatible<
   SiliconflowChatModelIds,
   SiliconflowCompletionModelIds,
   SiliconflowEmbeddingModelIds,

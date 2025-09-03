@@ -128,7 +128,7 @@ export const useChat = (repository?: IConversationRepository) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: selectedModel.value || 'Qwen/Qwen3-Coder-30B-A3B-Instruct',
+        model: selectedModel.value,
         messages: messages.value.map(msg => ({
           role: msg.role,
           content: msg.content,

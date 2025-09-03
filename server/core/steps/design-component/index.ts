@@ -27,7 +27,7 @@ export async function generateComponentDesign(query: string) {
     3. 生成结构化的组件设计文档。
   `;
   const { object } = await generateObject({
-    model: siliconflow('Qwen/Qwen3-Coder-30B-A3B-Instruct'),
+    model: modelProvider.languageModel('Qwen3-Coder-30B'),
     system: systemPrompt,
     prompt: query,
     schema: z.object({

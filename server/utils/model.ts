@@ -3,7 +3,7 @@
  * @Author 侯文君
  * @Date 2025-08-25 15:37
  * @LastEditors 侯文君
- * @LastEditTime 2025-09-03 15:19
+ * @LastEditTime 2025-09-08 11:25
  */
 
 import { createOpenAICompatible } from '@ai-sdk/openai-compatible';
@@ -13,7 +13,11 @@ import type {
   SiliconflowEmbeddingModelIds,
   SiliconflowImageModelIds,
 } from '#shared/types/model';
-import { customProvider } from 'ai';
+import {
+  customProvider,
+  wrapLanguageModel,
+  extractReasoningMiddleware,
+} from 'ai';
 import { ollama } from 'ollama-ai-provider-v2';
 import type { LanguageModelV2 } from '@ai-sdk/provider';
 
@@ -42,7 +46,10 @@ const modelProvider = customProvider({
     'DeepSeek-R1': siliconflow('deepseek-ai/DeepSeek-R1'),
     'DeepSeek-V3.1': siliconflow('deepseek-ai/DeepSeek-V3.1'),
     'Qwen2.5-7B': ollama('qwen2.5:7b'),
-    'Qwen3-4B': ollama('qwen3:4b'),
+    'Qwen3-4B': wrapLanguageModel({
+      model: ollama('qwen3:4b'),
+      middleware: extractReasoningMiddleware({ tagName: 'think' }),
+    }),
   } satisfies Record<AvailableModelNames, LanguageModelV2>,
 });
 

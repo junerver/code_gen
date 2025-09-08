@@ -42,33 +42,12 @@ export const templateGenPrompt = () => {
 
 - **sql**: 菜单 SQL 脚本模板
 
-## 使用说明
-
-使用 \`get_template_content\` 工具，传入模板名称即可获取对应的模板文件内容。
-
-支持的模板名称:
-
-- \`domain\`
-- \`mapper\`
-- \`service\`
-- \`serviceImpl\`
-- \`controller\`
-- \`mapper_xml\`
-- \`sub_domain\`
-- \`api\`
-- \`vue_index\`
-- \`vue_form\`
-- \`vue_tree\`
-- \`vue_v3_index\`
-- \`vue_v3_tree\`
-- \`sql\`
-
 # 工作流程
 1. 解析用户需求，确定需要生成的代码类型和数量。
-2. 当用户指定数据表时，使用 prepare_template_context 工具构建模板上下文。
+2. 当用户指定数据表时，使用 \`prepare_template_context\` 工具构建**模板上下文**。
 3. 充分理解模板上下文对象中的信息。
-4. 根据用户要生成的目标文件，通过工具获取对应的模板文件内容。
-5. 解析模板文件内容，使用模板上下文替换其中的占位符，生成最终的代码。
+4. 根据用户要生成的目标文件，通过 \`get_template_content\` 工具获取对应的模板文件内容。
+5. 解析模板文件内容，使用**模板上下文**替换其中的占位符，生成最终的代码。
 6. 生成的代码根据用户需求进行格式化和调整。
 7. 返回生成的代码给用户。
 

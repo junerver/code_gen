@@ -3,7 +3,7 @@
  * @Author 侯文君
  * @Date 2025-09-02 8:52
  * @LastEditors 侯文君
- * @LastEditTime 2025-09-08 10:28
+ * @LastEditTime 2025-09-08 10:46
  */
 
 import { experimental_createMCPClient } from 'ai';
@@ -33,7 +33,34 @@ const mysqlClientPromise = experimental_createMCPClient({
 });
 
 export const initMcpTools = async () => {
-  const templateTools = await (await templateClientPromise).tools();
+  const templateTools = await (
+    await templateClientPromise
+  ).tools({
+    schemas: {
+      get_template_content: {
+        inputSchema: z.object({
+          template_name: z
+            .enum([
+              'domain',
+              'mapper',
+              'service',
+              'serviceImpl',
+              'controller',
+              'mapper_xml',
+              'sub_domain',
+              'api',
+              'vue_index',
+              'vue_form',
+              'vue_tree',
+              'vue_v3_index',
+              'vue_v3_tree',
+              'sql',
+            ])
+            .describe('Name of the template to get template content'),
+        }),
+      },
+    },
+  });
   // 只暴露模板上下文工具
   const mysqlTools = await (
     await mysqlClientPromise

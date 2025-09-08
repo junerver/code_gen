@@ -13,6 +13,7 @@ export default defineNuxtConfig({
   runtimeConfig: {
     siliconFlowApiUrl: '',
     siliconFlowApiKey: '',
+    mcpServerDirectory: '',
   },
   alias: {
     '#server': fileURLToPath(new URL('./server', import.meta.url)),

@@ -3,7 +3,7 @@
  * @Author 侯文君
  * @Date 2025-08-18 18:49
  * @LastEditors 侯文君
- * @LastEditTime 2025-09-03 15:30
+ * @LastEditTime 2025-09-08 11:02
  */
 
 import { stepCountIs, streamText } from 'ai';
@@ -12,10 +12,12 @@ import { templateGenPrompt } from '#server/core/prompt/template-gen';
 import { initMcpTools } from '#server/core/tools/mcp-tools';
 import type { H3Event } from 'h3';
 import type { ChatRequest } from '#shared/types/api/chat';
+import { initLocalTools } from '#server/core/tools/local-tools';
 
 export default defineLazyEventHandler(async () => {
   // 初始化mcp工具
-  const tools = await initMcpTools();
+  const mcpTools = await initMcpTools();
+  const localTools = initLocalTools();
   return defineEventHandler(async (event: H3Event) => {
     const {
       messages,
@@ -25,7 +27,7 @@ export default defineLazyEventHandler(async () => {
     const result = streamText({
       model: llmProvider(model),
       temperature,
-      tools,
+      tools: { ...mcpTools, ...localTools },
       stopWhen: stepCountIs(10),
       system: templateGenPrompt(),
       messages,

@@ -3,7 +3,7 @@
  * @Author 侯文君
  * @Date 2025-09-02 8:52
  * @LastEditors 侯文君
- * @LastEditTime 2025-09-08 10:46
+ * @LastEditTime 2025-09-08 11:07
  */
 
 import { experimental_createMCPClient } from 'ai';
@@ -32,7 +32,11 @@ const mysqlClientPromise = experimental_createMCPClient({
   }),
 });
 
+/**
+ * 初始化MCP工具
+ */
 export const initMcpTools = async () => {
+  // 只暴露模板工具，并明确约束输入参数协议
   const templateTools = await (
     await templateClientPromise
   ).tools({

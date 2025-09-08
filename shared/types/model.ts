@@ -3,7 +3,7 @@
  * @Author 侯文君
  * @Date 2025-09-02 12:37
  * @LastEditors 侯文君
- * @LastEditTime 2025-09-03 18:39
+ * @LastEditTime 2025-09-08 11:40
  */
 
 /**
@@ -58,6 +58,11 @@ export const AvailableModels = [
     id: 'qwen2.5:7b',
     name: 'Qwen2.5-7B',
     description: '本地ollama模型，支持32K上下文',
+  },
+  {
+    id: 'qwen2.5-coder:7b',
+    name: 'Qwen2.5-Coder-7B',
+    description: '本地ollama模型，支持32K上下文，轻量级代码生成模型',
   },
   {
     id: 'qwen3:4b',

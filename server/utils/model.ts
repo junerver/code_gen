@@ -3,7 +3,7 @@
  * @Author 侯文君
  * @Date 2025-08-25 15:37
  * @LastEditors 侯文君
- * @LastEditTime 2025-09-08 11:40
+ * @LastEditTime 2025-09-09 15:46
  */
 
 import { createOpenAICompatible } from '@ai-sdk/openai-compatible';
@@ -20,6 +20,7 @@ import {
 } from 'ai';
 import { ollama } from 'ollama-ai-provider-v2';
 import type { LanguageModelV2 } from '@ai-sdk/provider';
+import { createDeepSeek } from '@ai-sdk/deepseek';
 
 /**
  * 硅基流动模型封装
@@ -35,6 +36,10 @@ const siliconflow = createOpenAICompatible<
   name: 'siliconflow',
 });
 
+const deepseek = createDeepSeek({
+  apiKey: useRuntimeConfig().deepseekApiKey,
+});
+
 /**
  * 自定义的模型提供器，所有可用模型通过模型提供器获取
  */
@@ -45,12 +50,15 @@ const modelProvider = customProvider({
     'Qwen2.5-72B': siliconflow('Qwen/Qwen2.5-72B-Instruct-128K'),
     'DeepSeek-R1': siliconflow('deepseek-ai/DeepSeek-R1'),
     'DeepSeek-V3.1': siliconflow('deepseek-ai/DeepSeek-V3.1'),
+    'Kimi-Dev-72B': siliconflow('moonshotai/Kimi-Dev-72B'),
     'Qwen2.5-7B': ollama('qwen2.5:7b'),
     'Qwen2.5-Coder-7B': ollama('qwen2.5-coder:7b'),
     'Qwen3-4B': wrapLanguageModel({
       model: ollama('qwen3:4b'),
       middleware: extractReasoningMiddleware({ tagName: 'think' }),
     }),
+    'DeepSeek-Chat': deepseek('deepseek-chat'),
+    'DeepSeek-Reasoner': deepseek('deepseek-reasoner'),
   } satisfies Record<AvailableModelNames, LanguageModelV2>,
 });
 

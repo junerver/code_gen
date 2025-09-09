@@ -28,7 +28,9 @@
           >
             <div class="model-info">
               <div class="model-name">{{ model.name }}</div>
-              <div class="model-description">{{ model.description }}</div>
+              <div class="model-description">
+                {{ displayDescription(model) }}
+              </div>
             </div>
             <el-icon v-if="modelValue === model.name" class="check-icon">
               <Check />
@@ -77,6 +79,10 @@ const selectedModelDisplay = computed(() => {
 const selectModel = (modelName: AvailableModelNames) => {
   modelValue.value = modelName;
   showPopover.value = false; // 选择后自动关闭popover
+};
+
+const displayDescription = (modelConfig: (typeof AvailableModels)[number]) => {
+  return `[${modelConfig.provider}]${modelConfig.description}`;
 };
 </script>
 

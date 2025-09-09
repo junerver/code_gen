@@ -3,7 +3,7 @@
  * @Author 侯文君
  * @Date 2025-09-02 12:37
  * @LastEditors 侯文君
- * @LastEditTime 2025-09-09 15:43
+ * @LastEditTime 2025-09-09 16:36
  */
 
 /**
@@ -24,7 +24,7 @@ export type SiliconflowEmbeddingModelIds = string & {};
 export type SiliconflowImageModelIds = string & {};
 
 // 默认使用的模型
-export const DEFAULT_MODEL = 'Qwen3-Coder-30B';
+export const DEFAULT_MODEL = 'DeepSeek-Chat';
 
 /**
  * 可用模型列表

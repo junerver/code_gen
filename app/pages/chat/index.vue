@@ -55,7 +55,7 @@
       </el-header>
 
       <!-- 聊天主体 -->
-      <el-main class="chat-main">
+      <el-main class="chat-main" :style="chatMainStyle">
         <div ref="messagesContainer" class="messages-container">
           <!-- 空状态 -->
           <div v-if="messages.length === 0" class="empty-state">
@@ -76,10 +76,28 @@
             :list="formattedMessages"
             class="bubble-list"
           >
+            <template #header="{ item }">
+              <div v-if="item.role === 'assistant' && item.reasoningContent">
+                <Thinking
+                  auto-collapse
+                  max-width="900px"
+                  :content="item.reasoningContent"
+                  :status="item.reasoningStatus"
+                />
+              </div>
+            </template>
+            <template #content="{ item }">
+              <XMarkdown
+                v-if="item.role === 'assistant'"
+                :markdown="item.content"
+                class="vp-raw"
+              />
+              <p v-else>{{ item.content }}</p>
+            </template>
             <template #footer="{ item }">
               <div
-                class="footer-container"
                 v-if="item.role === 'assistant' && !item.typing"
+                class="footer-container"
               >
                 <!-- 重新生成 -->
                 <el-button
@@ -97,6 +115,14 @@
                   circle
                   @click="handleExtractCode(item)"
                 />
+                <!-- 预览组件 -->
+                <el-button
+                  color="#67c23a"
+                  :icon="View"
+                  size="small"
+                  circle
+                  @click="handlePreview(item)"
+                />
               </div>
             </template>
           </BubbleList>
@@ -104,16 +130,25 @@
       </el-main>
 
       <!-- 使用 Sender 输入组件 -->
-      <el-footer class="chat-footer">
+      <el-footer ref="chatFooterRef" class="chat-footer">
         <Sender
+          ref="senderRef"
           v-model="inputMessage"
           :disabled="loading"
           :placeholder="'请输入您的问题或代码需求...'"
           class="message-sender"
           variant="updown"
           clearable
+          :auto-size="{
+            maxRows: 7,
+            minRows: 3,
+          }"
           @submit="handleSendMessage"
-        />
+        >
+          <template #prefix>
+            <ModelSelect v-model="selectedModel" />
+          </template>
+        </Sender>
       </el-footer>
     </div>
 
@@ -127,52 +162,70 @@
       class="error-alert"
       @close="error = undefined"
     />
+    <CodePreview ref="previewRef" />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed, nextTick } from "vue";
 import {
   ChatDotRound,
   Delete,
+  DocumentCopy,
   Plus,
   Refresh,
-  DocumentCopy,
-} from "@element-plus/icons-vue";
-import { ElMessage, ElMessageBox } from "element-plus";
-import { BubbleList, Conversations, Sender } from "vue-element-plus-x";
-import { useChat } from "~/composables/useChat";
+  View,
+} from '@element-plus/icons-vue';
+import { ElMessage, ElMessageBox } from 'element-plus';
+import { computed, nextTick, onMounted, onUnmounted, ref } from 'vue';
+import {
+  BubbleList,
+  Conversations,
+  Sender,
+  Thinking,
+  XMarkdown,
+} from 'vue-element-plus-x';
 import type {
   ConversationItem,
   ConversationMenuCommand,
-} from "vue-element-plus-x/types/Conversations";
-import type { Conversation } from "~/types/conversation";
-import type { ChatMessage } from "~/types/chat";
+} from 'vue-element-plus-x/types/Conversations';
+import type CodePreview from '~/components/CodePreview.vue';
+import { PiniaConversationRepository } from '~/utils/pinia-conv-repos';
+import { useChat } from '~/composables/useChat';
+import type { ChatMessage } from '~/types/chat';
+import type { Conversation } from '~/types/conversation';
+
+const previewRef =
+  useTemplateRef<InstanceType<typeof CodePreview>>('previewRef');
 
 // 修改 title
 useHead({
-  title: "AI代码生成助手",
+  title: 'AI代码生成助手',
 });
+
+const conversationStore = new PiniaConversationRepository();
 
 // 使用聊天功能
 const {
   messages,
   loading,
   error,
+  selectedModel,
   sendMessage,
   clearMessages,
   regenerate,
-  conversationStore,
 } = useChat();
 
 // 响应式数据
-const inputMessage = ref("");
+const inputMessage = ref('');
 const messagesContainer = ref<HTMLElement>();
 const bubbleListRef = ref();
+const senderRef = ref();
+const chatFooterRef = ref<HTMLElement>();
+const senderHeight = ref(170); // 默认最小高度
 
 // 从store获取会话相关数据
 const conversations = computed<ConversationItem<Conversation>[]>(() => {
-  return conversationStore.conversations.map((conv) => ({
+  return conversationStore.conversations.map(conv => ({
     // 直接展开 conv 对象,避免重复指定 id
     ...conv,
     label: conv.title,
@@ -194,23 +247,23 @@ const activeConversation = computed({
 });
 
 // 头像配置
-const userAvatar = "https://avatars.githubusercontent.com/u/76239030?v=4";
+const userAvatar = 'https://avatars.githubusercontent.com/u/76239030?v=4';
 const assistantAvatar =
-  "https://cube.elemecdn.com/9/c2/f0ee8a3c7c9638a54940382568c9dpng.png";
+  'https://cube.elemecdn.com/9/c2/f0ee8a3c7c9638a54940382568c9dpng.png';
 
 // 格式化消息数据，将存储在内存中的数据转换成 BubbleList 组件需要的数据结构
 const formattedMessages = computed<ChatMessage[]>(() => {
-  return messages.value.map((message) => {
-    const isUser = message.role === "user";
-    const variant = !isUser ? "filled" : "outlined";
-    const placement = isUser ? "end" : "start";
+  return messages.value.map(message => {
+    const isUser = message.role === 'user';
+    const variant = !isUser ? 'filled' : 'outlined';
+    const placement = isUser ? 'end' : 'start';
     return {
       ...message,
       placement,
       avatar: isUser ? userAvatar : assistantAvatar,
-      avatarSize: "32px",
+      avatarSize: '32px',
       variant,
-      maxWidth: isUser ? "500px" : "900px",
+      maxWidth: '900px',
     };
   });
 });
@@ -222,7 +275,7 @@ const handleSendMessage = async (message?: string): Promise<void> => {
   const messageContent = message || inputMessage.value.trim();
   if (!messageContent || loading.value) return;
 
-  inputMessage.value = "";
+  inputMessage.value = '';
   // 发送消息，现在包含流式处理
   await sendMessage(messageContent);
   await scrollToBottom();
@@ -233,16 +286,15 @@ const handleSendMessage = async (message?: string): Promise<void> => {
  * @param item 要重新生成的消息项
  */
 const handleRegenerate = async (item: ChatMessage): Promise<void> => {
-  console.log("重新生成消息", item);
-  if (item.role !== "assistant") return;
+  if (item.role !== 'assistant') return;
   // 提示重生成将替换当前消息
   ElMessageBox.confirm(
-    "确认重新生成当前消息吗？这将替换当前消息，且无法撤销。",
-    "确认重新生成",
+    '确认重新生成当前消息吗？这将替换当前消息，且无法撤销。',
+    '确认重新生成',
     {
-      confirmButtonText: "确定",
-      cancelButtonText: "取消",
-      type: "warning",
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      type: 'warning',
     }
   )
     .then(async () => {
@@ -261,20 +313,33 @@ const handleRegenerate = async (item: ChatMessage): Promise<void> => {
  * 处理组件源码提取
  */
 const handleExtractCode = (item: ChatMessage): void => {
-  if (item.role !== "assistant") return;
-  const sourceCode = extractCode(item.content);
+  if (item.role !== 'assistant') return;
+  const sourceCode = genPreviewCode(extractCode(item.content));
   if (sourceCode) {
     // 复制到剪贴板
     navigator.clipboard
       .writeText(sourceCode)
       .then(() => {
-        ElMessage.success("源码已复制到剪贴板");
+        ElMessage.success('源码已复制到剪贴板');
       })
       .catch(() => {
-        ElMessage.error("复制失败,请手动复制");
+        ElMessage.error('复制失败,请手动复制');
       });
   } else {
-    ElMessage.warning("未提取到组件源码");
+    ElMessage.warning('未提取到组件源码');
+  }
+};
+
+/**
+ * 处理代码预览
+ */
+const handlePreview = (item: ChatMessage): void => {
+  if (item.role !== 'assistant') return;
+  const sourceCode = extractCode(item.content);
+  if (sourceCode) {
+    previewRef.value?.openDialog(sourceCode);
+  } else {
+    ElMessage.warning('未提取到组件源码');
   }
 };
 
@@ -307,9 +372,9 @@ const handleConversationCreate = (): void => {
 
   conversationStore.createConversation({
     title: `新对话`,
-    group: "recent",
+    group: 'recent',
   });
-  ElMessage.success("已创建新对话");
+  ElMessage.success('已创建新对话');
   // 滚动到底部
   nextTick(() => {
     scrollToBottom();
@@ -325,40 +390,40 @@ function handleMenuCommand(
   command: ConversationMenuCommand,
   item: ConversationItem<Conversation>
 ) {
-  if (command === "delete") {
+  if (command === 'delete') {
     ElMessageBox.confirm(
       `确定要删除会话 "${item.label}" 吗？此操作不可恢复。`,
-      "确认删除",
+      '确认删除',
       {
-        confirmButtonText: "确定",
-        cancelButtonText: "取消",
-        type: "warning",
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning',
       }
     )
       .then(() => {
         conversationStore.deleteConversation(item.id);
-        ElMessage.success("会话已删除");
+        ElMessage.success('会话已删除');
       })
       .catch(() => {
         // 用户取消
       });
   }
 
-  if (command === "rename") {
-    ElMessageBox.prompt("请输入新的会话名称", "重命名会话", {
-      confirmButtonText: "确定",
-      cancelButtonText: "取消",
+  if (command === 'rename') {
+    ElMessageBox.prompt('请输入新的会话名称', '重命名会话', {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
       inputValue: item.label,
       inputValidator: (value: string) => {
         if (!value || !value.trim()) {
-          return "会话名称不能为空";
+          return '会话名称不能为空';
         }
         return true;
       },
     })
       .then(({ value }) => {
         conversationStore.updateConversation(item.id, { title: value.trim() });
-        ElMessage.success("重命名成功");
+        ElMessage.success('重命名成功');
       })
       .catch(() => {
         // 用户取消
@@ -371,22 +436,22 @@ function handleMenuCommand(
  */
 const handleClearChat = (): void => {
   if (!conversationStore.activeConversation) {
-    ElMessage.warning("没有活跃的会话");
+    ElMessage.warning('没有活跃的会话');
     return;
   }
 
   ElMessageBox.confirm(
     `确定要清空会话 "${conversationStore.activeConversation.title}" 的所有对话记录吗？此操作不可恢复。`,
-    "确认清空",
+    '确认清空',
     {
-      confirmButtonText: "确定",
-      cancelButtonText: "取消",
-      type: "warning",
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      type: 'warning',
     }
   )
     .then(() => {
       clearMessages();
-      ElMessage.success("对话记录已清空");
+      ElMessage.success('对话记录已清空');
     })
     .catch(() => {
       // 用户取消
@@ -400,6 +465,34 @@ const scrollToBottom = async (): Promise<void> => {
   bubbleListRef.value?.scrollToBottom();
 };
 
+// 监听 Sender 高度变化
+const observeSenderHeight = () => {
+  if (!chatFooterRef.value) return;
+
+  const resizeObserver = new ResizeObserver(entries => {
+    for (const entry of entries) {
+      const { height } = entry.contentRect;
+      senderHeight.value = Math.max(height, 170); // 确保最小高度为170px
+    }
+  });
+
+  resizeObserver.observe(chatFooterRef.value);
+
+  // 组件卸载时清理观察器
+  onUnmounted(() => {
+    resizeObserver.disconnect();
+  });
+};
+
+// 计算 chat-main 的动态高度
+const chatMainStyle = computed(() => {
+  const headerHeight = 70; // chat-header 固定高度
+  const footerHeight = senderHeight.value; // 动态的 footer 高度
+  return {
+    height: `calc(100vh - ${headerHeight + footerHeight}px)`,
+  };
+});
+
 // 组件挂载时初始化
 onMounted(() => {
   // 如果没有会话，创建默认会话
@@ -410,6 +503,8 @@ onMounted(() => {
   // 滚动到底部
   nextTick(() => {
     scrollToBottom();
+    // 初始化高度观察器
+    observeSenderHeight();
   });
 });
 </script>
@@ -501,10 +596,11 @@ body {
 }
 
 .chat-main {
-  flex: 1;
   padding: 24px;
   overflow: hidden;
   min-height: 0;
+  transition: height 0.2s ease-in-out;
+  /* 移除 flex: 1，改用动态计算的高度 */
 }
 
 .messages-container {
@@ -539,12 +635,20 @@ body {
   backdrop-filter: blur(10px);
   border-top: 1px solid #e4e7ed;
   padding: 24px;
-  height: 120px;
+  min-height: 170px; /* 确保至少显示3行文字的基础高度 */
+  height: auto; /* 允许根据内容自动调整高度 */
   flex-shrink: 0;
+  overflow: visible;
+  display: flex;
+  flex-direction: column;
+  transition: height 0.2s ease-in-out;
 }
 
 .message-sender {
   width: 100%;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
 }
 
 .send-tip {
@@ -591,7 +695,7 @@ body {
   background: rgba(0, 0, 0, 0.1);
   padding: 2px 6px;
   border-radius: 4px;
-  font-family: "Fira Code", "Consolas", monospace;
+  font-family: 'Fira Code', 'Consolas', monospace;
 }
 
 :deep(.Conversations) {

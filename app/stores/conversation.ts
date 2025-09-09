@@ -1,298 +1,314 @@
-import { defineStore } from "pinia";
-import type { ChatMessage } from "~/types/chat";
+import { defineStore } from 'pinia';
+import type { ChatMessage } from '~/types/chat';
 import type {
-	Conversation,
-	CreateConversationParams,
-	UpdateConversationParams,
-} from "~/types/conversation";
+  Conversation,
+  CreateConversationParams,
+  UpdateConversationParams,
+} from '~/types/conversation';
 
 /**
  * 会话状态管理
  */
-export const useConversationStore = defineStore("conversation", () => {
-	// 状态
-	const conversations = ref<Conversation[]>([]);
-	const activeConversationId = ref<string>("");
-	const conversationMessages = ref<Map<string, ChatMessage[]>>(new Map());
-	const loading = ref(false);
-	const error = ref<string | undefined>();
+export const useConversationStore = defineStore('conversation', () => {
+  // 会话列表
+  const conversations = ref<Conversation[]>([]);
+  // 活跃会话ID
+  const activeConversationId = ref<string>('');
+  // 会话消息映射
+  const conversationMessages = ref<Map<string, ChatMessage[]>>(new Map());
 
-	// 计算属性
-	const activeConversation = computed(() => {
-		return conversations.value.find(
-			(conv) => conv.id === activeConversationId.value,
-		);
-	});
+  // 计算属性-当前活跃的会话
+  const activeConversation = computed<Conversation | undefined>(() => {
+    return conversations.value.find(
+      conv => conv.id === activeConversationId.value
+    );
+  });
+  // 计算属性-活跃的消息列表
+  const activeMessages = computed<ChatMessage[]>(() => {
+    return conversationMessages.value.get(activeConversationId.value) || [];
+  });
+  // 计算属性-会话数量
+  const conversationCount = computed<number>(() => conversations.value.length);
 
-	const activeMessages = computed(() => {
-		return conversationMessages.value.get(activeConversationId.value) || [];
-	});
+  /**
+   * 创建新会话
+   * @param params 创建参数
+   * @returns 新创建的会话
+   */
+  const createConversation = (
+    params: CreateConversationParams = {}
+  ): Conversation => {
+    const now = new Date();
+    const conversation: Conversation = {
+      id: generateConversationId(),
+      title: params.title || `新对话 ${conversations.value.length + 1}`,
+      group: params.group || 'recent',
+      createdAt: now,
+      updatedAt: now,
+      config: params.config,
+    };
 
-	const conversationCount = computed(() => conversations.value.length);
+    conversations.value.unshift(conversation);
+    conversationMessages.value.set(conversation.id, []);
+    activeConversationId.value = conversation.id;
 
-	/**
-	 * 生成会话ID
-	 * @returns 唯一的会话ID
-	 */
-	const generateConversationId = (): string => {
-		return `conv_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-	};
+    return conversation;
+  };
 
-	/**
-	 * 创建新会话
-	 * @param params 创建参数
-	 * @returns 新创建的会话
-	 */
-	const createConversation = (
-		params: CreateConversationParams = {},
-	): Conversation => {
-		const now = new Date();
-		const conversation: Conversation = {
-			id: generateConversationId(),
-			title: params.title || `新对话 ${conversations.value.length + 1}`,
-			group: params.group || "recent",
-			createdAt: now,
-			updatedAt: now,
-			config: params.config,
-		};
+  /**
+   * 更新会话
+   * @param id 会话ID
+   * @param params 更新参数
+   */
+  const updateConversation = (
+    id: string,
+    params: UpdateConversationParams
+  ): void => {
+    const index = conversations.value.findIndex(conv => conv.id === id);
+    if (index > -1) {
+      const conversation = conversations.value[index];
+      if (conversation) {
+        Object.assign(conversation, {
+          ...params,
+          updatedAt: new Date(),
+        });
+      }
+    }
+  };
 
-		conversations.value.unshift(conversation);
-		conversationMessages.value.set(conversation.id, []);
-		activeConversationId.value = conversation.id;
+  /**
+   * 删除会话
+   * @param id 会话ID
+   */
+  const deleteConversation = (id: string): void => {
+    const index = conversations.value.findIndex(conv => conv.id === id);
+    if (index > -1) {
+      conversations.value.splice(index, 1);
+      conversationMessages.value.delete(id);
 
-		return conversation;
-	};
+      // 如果删除的是当前活跃会话，切换到第一个会话
+      if (activeConversationId.value === id) {
+        if (conversations.value.length > 0) {
+          activeConversationId.value = conversations.value[0]?.id || '';
+        } else {
+          activeConversationId.value = '';
+        }
+      }
+    }
+  };
 
-	/**
-	 * 更新会话
-	 * @param id 会话ID
-	 * @param params 更新参数
-	 */
-	const updateConversation = (
-		id: string,
-		params: UpdateConversationParams,
-	): void => {
-		const index = conversations.value.findIndex((conv) => conv.id === id);
-		if (index > -1) {
-			const conversation = conversations.value[index];
-			if (conversation) {
-				Object.assign(conversation, {
-					...params,
-					updatedAt: new Date(),
-				});
-			}
-		}
-	};
+  /**
+   * 切换活跃会话
+   * @param id 会话ID
+   */
+  const setActiveConversation = (id: string): void => {
+    const conversation = conversations.value.find(conv => conv.id === id);
+    if (conversation) {
+      activeConversationId.value = id;
+    }
+  };
 
-	/**
-	 * 删除会话
-	 * @param id 会话ID
-	 */
-	const deleteConversation = (id: string): void => {
-		const index = conversations.value.findIndex((conv) => conv.id === id);
-		if (index > -1) {
-			conversations.value.splice(index, 1);
-			conversationMessages.value.delete(id);
+  /**
+   * 添加消息到指定会话
+   * @param conversationId 会话ID
+   * @param message 消息
+   */
+  const addMessage = (conversationId: string, message: ChatMessage): void => {
+    const messages = conversationMessages.value.get(conversationId) || [];
+    messages.push(message);
+    conversationMessages.value.set(conversationId, messages);
 
-			// 如果删除的是当前活跃会话，切换到第一个会话
-			if (activeConversationId.value === id) {
-				if (conversations.value.length > 0) {
-					activeConversationId.value = conversations.value[0]?.id || "";
-				} else {
-					activeConversationId.value = "";
-				}
-			}
-		}
-	};
+    // 更新会话的最后消息和更新时间
+    const conversation = conversations.value.find(
+      conv => conv.id === conversationId
+    );
+    if (conversation) {
+      conversation.lastMessage =
+        message.content.slice(0, 50) +
+        (message.content.length > 50 ? '...' : '');
+      conversation.updatedAt = new Date();
+    }
+  };
 
-	/**
-	 * 切换活跃会话
-	 * @param id 会话ID
-	 */
-	const setActiveConversation = (id: string): void => {
-		const conversation = conversations.value.find((conv) => conv.id === id);
-		if (conversation) {
-			activeConversationId.value = id;
-		}
-	};
+  /**
+   * 更新指定会话中的消息
+   * @param conversationId 会话ID
+   * @param messageId 消息ID
+   * @param content 新内容
+   * @param done 是否完成
+   */
+  const updateMessage = (
+    conversationId: string,
+    messageId: string,
+    content: string,
+    done: boolean = false
+  ): void => {
+    const messages = conversationMessages.value.get(conversationId) || [];
+    const messageIndex = messages.findIndex(msg => msg.id === messageId);
+    if (messageIndex > -1) {
+      const message = messages[messageIndex];
+      if (message) {
+        message.content = content;
+        if (message.loading) {
+          message.loading = false;
+        }
+        if (done) {
+          // 完成时取消打字机
+          message.typing = false;
+        }
+      }
+    }
+  };
 
-	/**
-	 * 添加消息到指定会话
-	 * @param conversationId 会话ID
-	 * @param message 消息
-	 */
-	const addMessage = (conversationId: string, message: ChatMessage): void => {
-		const messages = conversationMessages.value.get(conversationId) || [];
-		messages.push(message);
-		conversationMessages.value.set(conversationId, messages);
+  /**
+   * 更新指定会话中的消息推理内容
+   * @param conversationId 会话ID
+   * @param messageId 消息ID
+   * @param reasoningContent 推理内容
+   * @param reasoningStatus 推理状态
+   */
+  const updateMessageReasoning = (
+    conversationId: string,
+    messageId: string,
+    reasoningContent: string,
+    reasoningStatus?: ChatMessage['reasoningStatus']
+  ): void => {
+    const messages = conversationMessages.value.get(conversationId) || [];
+    const messageIndex = messages.findIndex(msg => msg.id === messageId);
+    if (messageIndex > -1) {
+      const message = messages[messageIndex];
+      if (message) {
+        message.reasoningContent = reasoningContent;
+        if (reasoningStatus) {
+          message.reasoningStatus = reasoningStatus;
+        }
+      }
+    }
+  };
 
-		// 更新会话的最后消息和更新时间
-		const conversation = conversations.value.find(
-			(conv) => conv.id === conversationId,
-		);
-		if (conversation) {
-			conversation.lastMessage =
-				message.content.slice(0, 50) +
-				(message.content.length > 50 ? "..." : "");
-			conversation.updatedAt = new Date();
-		}
-	};
+  /**
+   * 删除指定会话中的消息
+   * @param conversationId 会话ID
+   * @param messageId 消息ID
+   */
+  const deleteMessage = (conversationId: string, messageId: string): void => {
+    const messages = conversationMessages.value.get(conversationId) || [];
+    const messageIndex = messages.findIndex(msg => msg.id === messageId);
+    if (messageIndex > -1) {
+      messages.splice(messageIndex, 1);
+    }
+  };
 
-	/**
-	 * 更新指定会话中的消息
-	 * @param conversationId 会话ID
-	 * @param messageId 消息ID
-	 * @param content 新内容
-	 * @param done 是否完成
-	 */
-	const updateMessage = (
-		conversationId: string,
-		messageId: string,
-		content: string,
-		done: boolean = false,
-	): void => {
-		const messages = conversationMessages.value.get(conversationId) || [];
-		const messageIndex = messages.findIndex((msg) => msg.id === messageId);
-		if (messageIndex > -1) {
-			const message = messages[messageIndex];
-			if (message) {
-				message.content = content;
-				if (message.loading) {
-					message.loading = false;
-				}
-				if (done) {
-					// 完成时取消打字机
-					message.typing = false;
-				}
-			}
-		}
-	};
+  /**
+   * 清空指定会话的消息
+   * @param conversationId 会话ID
+   */
+  const clearMessages = (conversationId: string): void => {
+    conversationMessages.value.set(conversationId, []);
 
-	/**
-	 * 删除指定会话中的消息
-	 * @param conversationId 会话ID
-	 * @param messageId 消息ID
-	 */
-	const deleteMessage = (conversationId: string, messageId: string): void => {
-		const messages = conversationMessages.value.get(conversationId) || [];
-		const messageIndex = messages.findIndex((msg) => msg.id === messageId);
-		if (messageIndex > -1) {
-			messages.splice(messageIndex, 1);
-		}
-	};
+    // 更新会话信息
+    const conversation = conversations.value.find(
+      conv => conv.id === conversationId
+    );
+    if (conversation) {
+      conversation.lastMessage = undefined;
+      conversation.updatedAt = new Date();
+    }
+  };
 
-	/**
-	 * 清空指定会话的消息
-	 * @param conversationId 会话ID
-	 */
-	const clearMessages = (conversationId: string): void => {
-		conversationMessages.value.set(conversationId, []);
+  /**
+   * 获取指定会话的消息
+   * @param conversationId 会话ID
+   * @returns 消息列表
+   */
+  const getMessages = (conversationId: string): ChatMessage[] => {
+    return conversationMessages.value.get(conversationId) || [];
+  };
 
-		// 更新会话信息
-		const conversation = conversations.value.find(
-			(conv) => conv.id === conversationId,
-		);
-		if (conversation) {
-			conversation.lastMessage = undefined;
-			conversation.updatedAt = new Date();
-		}
-	};
+  /**
+   * 初始化默认会话
+   */
+  const initializeDefaultConversation = (): void => {
+    if (conversations.value.length === 0) {
+      createConversation({
+        title: '新对话',
+        group: 'recent',
+      });
+    }
+  };
 
-	/**
-	 * 获取指定会话的消息
-	 * @param conversationId 会话ID
-	 * @returns 消息列表
-	 */
-	const getMessages = (conversationId: string): ChatMessage[] => {
-		return conversationMessages.value.get(conversationId) || [];
-	};
+  /**
+   * 检查最新创建的会话是否有消息
+   * @returns 如果最新会话没有消息返回true，否则返回false
+   */
+  const isLatestConversationEmpty = (): boolean => {
+    if (conversations.value.length === 0) {
+      return false; // 没有会话时允许创建
+    }
 
-	/**
-	 * 初始化默认会话
-	 */
-	const initializeDefaultConversation = (): void => {
-		if (conversations.value.length === 0) {
-			createConversation({
-				title: "新对话",
-				group: "recent",
-			});
-		}
-	};
+    // 找到最新创建的会话（按创建时间排序）
+    const latestConversation = conversations.value.reduce((latest, current) => {
+      return new Date(current.createdAt) > new Date(latest.createdAt)
+        ? current
+        : latest;
+    });
 
-	/**
-	 * 检查最新创建的会话是否有消息
-	 * @returns 如果最新会话没有消息返回true，否则返回false
-	 */
-	const isLatestConversationEmpty = (): boolean => {
-		if (conversations.value.length === 0) {
-			return false; // 没有会话时允许创建
-		}
+    // 检查最新会话是否有消息
+    const messages =
+      conversationMessages.value.get(latestConversation.id) || [];
+    return messages.length === 0;
+  };
 
-		// 找到最新创建的会话（按创建时间排序）
-		const latestConversation = conversations.value.reduce((latest, current) => {
-			return new Date(current.createdAt) > new Date(latest.createdAt)
-				? current
-				: latest;
-		});
+  /**
+   * 切换到最新创建的会话
+   */
+  const switchToLatestConversation = (): void => {
+    if (conversations.value.length === 0) {
+      return;
+    }
 
-		// 检查最新会话是否有消息
-		const messages =
-			conversationMessages.value.get(latestConversation.id) || [];
-		return messages.length === 0;
-	};
+    // 找到最新创建的会话（按创建时间排序）
+    const latestConversation = conversations.value.reduce((latest, current) => {
+      return new Date(current.createdAt) > new Date(latest.createdAt)
+        ? current
+        : latest;
+    });
 
-	/**
-	 * 切换到最新创建的会话
-	 */
-	const switchToLatestConversation = (): void => {
-		if (conversations.value.length === 0) {
-			return;
-		}
+    // 切换到最新会话
+    setActiveConversation(latestConversation.id);
+  };
 
-		// 找到最新创建的会话（按创建时间排序）
-		const latestConversation = conversations.value.reduce((latest, current) => {
-			return new Date(current.createdAt) > new Date(latest.createdAt)
-				? current
-				: latest;
-		});
+  /**
+   * 重置所有状态
+   */
+  const reset = (): void => {
+    conversations.value = [];
+    activeConversationId.value = '';
+    conversationMessages.value.clear();
+  };
 
-		// 切换到最新会话
-		setActiveConversation(latestConversation.id);
-	};
+  return {
+    // 状态
+    conversations: readonly(conversations),
+    activeConversationId: readonly(activeConversationId),
+    activeConversation,
+    activeMessages,
+    conversationCount,
 
-	/**
-	 * 重置所有状态
-	 */
-	const reset = (): void => {
-		conversations.value = [];
-		activeConversationId.value = "";
-		conversationMessages.value.clear();
-		error.value = undefined;
-	};
-
-	return {
-		// 状态
-		conversations: readonly(conversations),
-		activeConversationId: readonly(activeConversationId),
-		activeConversation,
-		activeMessages,
-		conversationCount,
-		loading: readonly(loading),
-		error: readonly(error),
-
-		// 方法
-		createConversation,
-		updateConversation,
-		deleteConversation,
-		setActiveConversation,
-		addMessage,
-		updateMessage,
-		deleteMessage,
-		clearMessages,
-		getMessages,
-		initializeDefaultConversation,
-		isLatestConversationEmpty,
-		switchToLatestConversation,
-		reset,
-	};
+    // 方法
+    createConversation,
+    updateConversation,
+    deleteConversation,
+    setActiveConversation,
+    addMessage,
+    updateMessage,
+    updateMessageReasoning,
+    deleteMessage,
+    clearMessages,
+    getMessages,
+    initializeDefaultConversation,
+    isLatestConversationEmpty,
+    switchToLatestConversation,
+    reset,
+  };
 });

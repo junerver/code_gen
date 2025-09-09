@@ -2,7 +2,9 @@
   <div class="home-container">
     <div class="hero-section">
       <h1 class="hero-title">AI代码生成助手</h1>
-      <p class="hero-description">基于人工智能的智能代码生成工具，帮助您快速生成高质量代码</p>
+      <p class="hero-description">
+        基于人工智能的智能代码生成工具，帮助您快速生成高质量代码
+      </p>
       <div class="hero-actions">
         <el-button type="primary" size="large" @click="goToChat">
           <el-icon><ChatDotRound /></el-icon>
@@ -14,14 +16,14 @@
 </template>
 
 <script setup lang="ts">
-import { ChatDotRound } from '@element-plus/icons-vue'
+import { ChatDotRound } from '@element-plus/icons-vue';
 
 /**
  * 跳转到聊天页面
  */
 const goToChat = () => {
-  navigateTo('/chat')
-}
+  navigateTo('/chat');
+};
 </script>
 
 <style scoped>
@@ -64,7 +66,7 @@ const goToChat = () => {
   .hero-title {
     font-size: 2rem;
   }
-  
+
   .hero-description {
     font-size: 1rem;
   }

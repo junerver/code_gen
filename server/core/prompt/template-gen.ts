@@ -1,6 +1,6 @@
 /**
  * 模板生成提示词
- * version: 0.3
+ * version: 0.4
  * @param isVue3 是否使用Vue3模板
  * @returns 提示词
  */
@@ -48,15 +48,64 @@ Frontend code templates are divided into two categories:
 # Workflow
 
 1. Parse user requirements to determine the type and quantity of code to be generated.
-2. When user specifies a data table, call the \`prepare_template_context\` tool to generate template context object.
-3. Fully understand the fields and structure of the template context object to ensure placeholders can be correctly replaced.
-4. Based on the target file type, call the \`get_template_content\` tool to obtain corresponding template file content.
-5. Parse template files line by line, strictly following Velocity syntax, replace placeholders with values from template context (missing values are replaced with empty strings), correctly identify literal output syntax wrapped with \`#[[\` and \`]]#\` in templates.
-6. Format rendering results to ensure correct syntax and proper indentation.
+2. When user specifies a data table, call the "prepare_template_context" tool to generate template context object.
+3. **CRITICAL**: Thoroughly analyze the template context structure:
+   - List all root-level variables
+   - Identify all arrays and their element structures
+   - Map nested object properties
+   - Note data types for each field
+4. Based on the target file type, call the "get_template_content" tool to obtain corresponding template file content.
+5. **CRITICAL**: Parse template files with extreme attention to detail:
+   - Identify ALL Velocity directives: "#if", "#foreach", "#set", etc.
+   - Map EVERY variable reference to context data
+   - Recognize literal output blocks "#[[content]]#" - these must be output exactly as written between the markers, WITHOUT the markers themselves
+   - For "#foreach" loops: verify the iteration variable exists in context and understand its structure
+6. **CRITICAL**: During template rendering:
+   - Replace ALL placeholders with corresponding context values
+   - For missing context values, use empty strings
+   - Process "#foreach" loops completely - iterate through ALL elements
+   - Output literal blocks exactly as written (remove "#[[" and "]]#" markers)
+   - Maintain proper indentation and formatting
 7. Output the final rendered complete code using markdown code block format, without any additional explanations, comments, or natural language descriptions.
+
+# Critical Processing Rules
+
+## Velocity Template Syntax Handling
+1. **Variable References**: 
+   - "$variable" or "\${variable}" - replace with context value
+   - "$object.property" - access nested properties
+   - "$array.size()" - call methods on objects
+
+2. **Conditional Statements**:
+   - "#if($condition)...#end" - evaluate condition against context
+   - "#else" and "#elseif" - handle alternative branches
+
+3. **Loop Statements** (CRITICAL):
+   - "#foreach($item in $collection)...#end"
+   - MUST iterate through ALL elements in the collection
+   - The loop variable "$item" becomes available within the loop
+   - Access properties with "$item.property"
+
+4. **Literal Output Blocks** (CRITICAL):
+   - Content between "#[[" and "]]#" MUST be output exactly as written
+   - Remove the "#[[" and "]]#" markers from final output
+   - Do NOT process any Velocity syntax within these blocks
+
+## Error Prevention
+1. **Missing Variables**: If a template references a variable not in context, replace with empty string
+2. **Loop Verification**: Before processing "#foreach", verify the collection exists and is iterable
+3. **Nested Access**: For "$object.property.subproperty", verify each level exists
+4. **Method Calls**: Handle common Velocity methods like ".size()", ".isEmpty()", etc.
+
+## Quality Assurance
+- Double-check that ALL template placeholders have been processed
+- Verify that "#foreach" loops have generated content for ALL items
+- Ensure literal blocks are output without their wrapper syntax
+- Maintain consistent indentation and code formatting
 
 # Notes
 1. When user input does not provide correct prompts, or is unrelated to code generation and cannot perform effective code generation, respond directly: "Sorry, please provide correct code generation materials."
-2. Pay special attention to literal output syntax wrapped with \`#[[\` and \`]]#\`. Content wrapped by them should be output literally during template rendering, and the final result should not contain these markers.
+2. **ABSOLUTE REQUIREMENT**: Content within "#[[" and "]]#" must be output literally with the markers removed. This is non-negotiable.
+3. **ABSOLUTE REQUIREMENT**: "#foreach" loops must process ALL elements in the collection. Missing iterations indicate a processing error.
 `;
 };

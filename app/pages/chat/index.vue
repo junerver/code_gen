@@ -193,6 +193,7 @@ import { PiniaConversationRepository } from '~/utils/pinia-conv-repos';
 import { useChat } from '~/composables/useChat';
 import type { ChatMessage } from '~/types/chat';
 import type { Conversation } from '~/types/conversation';
+import { extractCode } from '#shared/utils/code';
 
 const previewRef =
   useTemplateRef<InstanceType<typeof CodePreview>>('previewRef');
@@ -314,7 +315,7 @@ const handleRegenerate = async (item: ChatMessage): Promise<void> => {
  */
 const handleExtractCode = (item: ChatMessage): void => {
   if (item.role !== 'assistant') return;
-  const sourceCode = genPreviewCode(extractCode(item.content));
+  const { sourceCode } = extractCode(item.content);
   if (sourceCode) {
     // 复制到剪贴板
     navigator.clipboard
@@ -335,11 +336,12 @@ const handleExtractCode = (item: ChatMessage): void => {
  */
 const handlePreview = (item: ChatMessage): void => {
   if (item.role !== 'assistant') return;
-  const sourceCode = extractCode(item.content);
-  if (sourceCode) {
+  const { sourceCode, language } = extractCode(item.content);
+  // 只有 vue3 源码支持使用 repl 预览
+  if (sourceCode && language === 'vue') {
     previewRef.value?.openDialog(sourceCode);
   } else {
-    ElMessage.warning('未提取到组件源码');
+    ElMessage.warning('仅支持 Vue3 组件源码预览');
   }
 };
 

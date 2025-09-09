@@ -6,6 +6,7 @@ import {
   buildHeadHtml,
   buildPlaygroundMain,
 } from '#shared/utils/code';
+import { genPreviewCode } from '#shared/utils/repair-vue';
 
 const elementPlusVersion = '2.10.7';
 const elementIconVersion = '2.3.2';
@@ -39,7 +40,7 @@ watch(
       'import-map.json': JSON.stringify(
         generateImportMap(vueVersion, elementPlusVersion, elementIconVersion),
         null,
-        2,
+        2
       ),
       'tsconfig.json': buildTsconfig(),
     });
@@ -48,7 +49,7 @@ watch(
     store.mainFile = 'src/PlaygroundMain.vue';
     store.activeFilename = 'src/App.vue';
   },
-  { immediate: true },
+  { immediate: true }
 );
 
 const openDialog = (code: string) => {

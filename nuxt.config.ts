@@ -13,6 +13,7 @@ export default defineNuxtConfig({
   runtimeConfig: {
     siliconFlowApiUrl: '',
     siliconFlowApiKey: '',
+    deepseekApiKey: '',
     mcpServerDirectory: '',
   },
   alias: {

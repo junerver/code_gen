@@ -3,7 +3,7 @@
  * @Author 侯文君
  * @Date 2025-09-02 12:37
  * @LastEditors 侯文君
- * @LastEditTime 2025-09-08 11:40
+ * @LastEditTime 2025-09-09 15:43
  */
 
 /**
@@ -14,7 +14,8 @@ export type SiliconflowChatModelIds =
   | 'deepseek-ai/DeepSeek-V3.1'
   | 'Qwen/Qwen2.5-72B-Instruct-128K'
   | 'Qwen/Qwen3-Coder-480B-A35B-Instruct'
-  | 'Qwen/Qwen3-Coder-30B-A3B-Instruct';
+  | 'Qwen/Qwen3-Coder-30B-A3B-Instruct'
+  | 'moonshotai/Kimi-Dev-72B';
 
 export type SiliconflowCompletionModelIds = string & {};
 
@@ -32,27 +33,32 @@ export const AvailableModels = [
   {
     id: 'deepseek-ai/DeepSeek-R1',
     name: 'DeepSeek-R1',
-    description: '最新推理模型，擅长数学和编程',
+    description: '[硅基流动]最新推理模型，擅长数学和编程',
   },
   {
     id: 'deepseek-ai/DeepSeek-V3.1',
     name: 'DeepSeek-V3.1',
-    description: '通用对话模型，平衡性能优秀',
+    description: '[硅基流动]通用对话模型，平衡性能优秀',
   },
   {
     id: 'Qwen/Qwen2.5-72B-Instruct-128K',
     name: 'Qwen2.5-72B',
-    description: '大参数模型，支持128K上下文',
+    description: '[硅基流动]大参数模型，支持128K上下文',
   },
   {
     id: 'Qwen/Qwen3-Coder-480B-A35B-Instruct',
     name: 'Qwen3-Coder-480B',
-    description: '专业代码生成模型，超大参数',
+    description: '[硅基流动]专业代码生成模型，超大参数',
   },
   {
     id: 'Qwen/Qwen3-Coder-30B-A3B-Instruct',
     name: 'Qwen3-Coder-30B',
-    description: '轻量级代码生成模型',
+    description: '[硅基流动]轻量级代码生成模型',
+  },
+  {
+    id: 'moonshotai/Kimi-Dev-72B',
+    name: 'Kimi-Dev-72B',
+    description: '[硅基流动]新一代开源编程大模型，擅长数学和编程',
   },
   {
     id: 'qwen2.5:7b',
@@ -68,6 +74,16 @@ export const AvailableModels = [
     id: 'qwen3:4b',
     name: 'Qwen3-4B',
     description: '本地ollama模型，支持256K上下文',
+  },
+  {
+    id: 'deepseek-chat',
+    name: 'DeepSeek-Chat',
+    description: '[DeepSeek]官方chat模型',
+  },
+  {
+    id: 'deepseek-reasoner',
+    name: 'DeepSeek-Reasoner',
+    description: '[DeepSeek]官方推理模型',
   },
 ] as const;
 

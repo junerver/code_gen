@@ -8,6 +8,10 @@
 NUXT_SILICON_FLOW_API_URL=https://api.siliconflow.cn/v1
 # 硅基流动api密钥
 NUXT_SILICON_FLOW_API_KEY=
+
+# DeepSeek api 密钥
+NUXT_DEEPSEEK_API_KEY=
+
 # mcp服务项目路径
 NUXT_MCP_SERVER_DIRECTORY=
 ```
@@ -33,11 +37,21 @@ ollama run qwen2.5:7b
 
 如果需要使用，记得首先通过 Ollama 安装。
 
+
+
 #### 使用 SiliconFlow 模型
 
 [硅基流动](https://cloud.siliconflow.cn/i/HT7A2l71)是一个第三方大模型API中转平台，可以通过它轻松的使用多个模型供应商提供的模型。
 
 如果使用硅基流动模型，需要将硅基流动官网创建的 API 密钥填充到 `NUXT_SILICON_FLOW_API_KEY` 字段。
+
+
+
+#### 使用 DeepSeek 官方模型
+
+虽然硅基流动提供了第三方架设的 DeepSeek 相关模型，但是稳定性不如官方模型接口。可以配置 DeepSeek 官方 api 密钥填充到 `NUXT_DEEPSEEK_API_KEY` 字段，在对话中使用官方模型。
+
+
 
 ### 配置MCP
 

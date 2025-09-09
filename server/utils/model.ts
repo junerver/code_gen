@@ -3,7 +3,7 @@
  * @Author 侯文君
  * @Date 2025-08-25 15:37
  * @LastEditors 侯文君
- * @LastEditTime 2025-09-09 15:46
+ * @LastEditTime 2025-09-09 17:04
  */
 
 import { createOpenAICompatible } from '@ai-sdk/openai-compatible';
@@ -12,7 +12,9 @@ import type {
   SiliconflowCompletionModelIds,
   SiliconflowEmbeddingModelIds,
   SiliconflowImageModelIds,
+  AvailableModelNames,
 } from '#shared/types/model';
+import { AvailableModels } from '#shared/types/model';
 import {
   customProvider,
   wrapLanguageModel,
@@ -41,26 +43,62 @@ const deepseek = createDeepSeek({
 });
 
 /**
+ * 根据模型配置创建语言模型实例
+ * @param modelConfig 模型配置对象
+ * @returns 语言模型实例
+ */
+function createLanguageModel(
+  modelConfig: (typeof AvailableModels)[number]
+): LanguageModelV2 {
+  const { id, provider, middleware } = modelConfig;
+
+  let baseModel: LanguageModelV2;
+
+  // 根据提供商创建基础模型
+  switch (provider) {
+    case 'siliconflow':
+      baseModel = siliconflow(id as SiliconflowChatModelIds);
+      break;
+    case 'ollama':
+      baseModel = ollama(id);
+      break;
+    case 'deepseek':
+      baseModel = deepseek(id);
+      break;
+    default:
+      throw new Error(`不支持的模型提供商: ${provider}`);
+  }
+
+  // 如果有中间件配置，则包装模型
+  if (middleware === 'think') {
+    return wrapLanguageModel({
+      model: baseModel,
+      middleware: extractReasoningMiddleware({ tagName: 'think' }),
+    });
+  }
+
+  return baseModel;
+}
+
+/**
+ * 动态创建模型提供器
+ * @returns 自定义模型提供器
+ */
+function createModelProvider() {
+  const languageModels = {} as Record<AvailableModelNames, LanguageModelV2>;
+
+  // 遍历可用模型列表，动态创建模型实例
+  for (const modelConfig of AvailableModels) {
+    languageModels[modelConfig.name] = createLanguageModel(modelConfig);
+  }
+
+  return customProvider({ languageModels });
+}
+
+/**
  * 自定义的模型提供器，所有可用模型通过模型提供器获取
  */
-const modelProvider = customProvider({
-  languageModels: {
-    'Qwen3-Coder-30B': siliconflow('Qwen/Qwen3-Coder-30B-A3B-Instruct'),
-    'Qwen3-Coder-480B': siliconflow('Qwen/Qwen3-Coder-480B-A35B-Instruct'),
-    'Qwen2.5-72B': siliconflow('Qwen/Qwen2.5-72B-Instruct-128K'),
-    'DeepSeek-R1': siliconflow('deepseek-ai/DeepSeek-R1'),
-    'DeepSeek-V3.1': siliconflow('deepseek-ai/DeepSeek-V3.1'),
-    'Kimi-Dev-72B': siliconflow('moonshotai/Kimi-Dev-72B'),
-    'Qwen2.5-7B': ollama('qwen2.5:7b'),
-    'Qwen2.5-Coder-7B': ollama('qwen2.5-coder:7b'),
-    'Qwen3-4B': wrapLanguageModel({
-      model: ollama('qwen3:4b'),
-      middleware: extractReasoningMiddleware({ tagName: 'think' }),
-    }),
-    'DeepSeek-Chat': deepseek('deepseek-chat'),
-    'DeepSeek-Reasoner': deepseek('deepseek-reasoner'),
-  } satisfies Record<AvailableModelNames, LanguageModelV2>,
-});
+const modelProvider = createModelProvider();
 
 /**
  * 对外暴露的类型安全的模型提供器

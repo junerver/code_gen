@@ -115,6 +115,11 @@ export const AvailableModels = [
 ] as const;
 
 /**
+ * 可用模型配置
+ */
+export type AvailableModelConfig = (typeof AvailableModels)[number];
+
+/**
  * 全部可用的模型名称类型
  */
-export type AvailableModelNames = (typeof AvailableModels)[number]['name'];
+export type AvailableModelNames = AvailableModelConfig['name'];

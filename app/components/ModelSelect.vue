@@ -46,6 +46,7 @@
 import { ref, computed } from 'vue';
 import { ArrowDown, Check } from '@element-plus/icons-vue';
 import {
+  type AvailableModelConfig,
   type AvailableModelNames,
   AvailableModels,
   DEFAULT_MODEL,
@@ -81,7 +82,7 @@ const selectModel = (modelName: AvailableModelNames) => {
   showPopover.value = false; // 选择后自动关闭popover
 };
 
-const displayDescription = (modelConfig: (typeof AvailableModels)[number]) => {
+const displayDescription = (modelConfig: AvailableModelConfig) => {
   return `[${modelConfig.provider}]${modelConfig.description}`;
 };
 </script>

@@ -3,7 +3,7 @@
  * @Author 侯文君
  * @Date 2025-08-25 15:37
  * @LastEditors 侯文君
- * @LastEditTime 2025-09-09 17:04
+ * @LastEditTime 2025-09-10 08:32
  */
 
 import { createOpenAICompatible } from '@ai-sdk/openai-compatible';
@@ -13,6 +13,7 @@ import type {
   SiliconflowEmbeddingModelIds,
   SiliconflowImageModelIds,
   AvailableModelNames,
+  AvailableModelConfig,
 } from '#shared/types/model';
 import { AvailableModels } from '#shared/types/model';
 import {
@@ -48,7 +49,7 @@ const deepseek = createDeepSeek({
  * @returns 语言模型实例
  */
 function createLanguageModel(
-  modelConfig: (typeof AvailableModels)[number]
+  modelConfig: AvailableModelConfig
 ): LanguageModelV2 {
   const { id, provider, middleware } = modelConfig;
 

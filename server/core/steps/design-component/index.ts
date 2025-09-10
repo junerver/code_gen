@@ -3,7 +3,7 @@
  * @Author 侯文君
  * @Date 2025-08-27 15:11
  * @LastEditors 侯文君
- * @LastEditTime 2025-09-03 15:00
+ * @LastEditTime 2025-09-10 13:13
  */
 
 import { generateObject } from 'ai';
@@ -27,7 +27,7 @@ export async function generateComponentDesign(query: string) {
     3. 生成结构化的组件设计文档。
   `;
   const { object } = await generateObject({
-    model: modelProvider.languageModel('Qwen3-Coder-30B'),
+    model: llmProvider('Qwen3-Coder-30B'),
     system: systemPrompt,
     prompt: query,
     schema: z.object({

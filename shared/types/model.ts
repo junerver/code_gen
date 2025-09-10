@@ -3,7 +3,7 @@
  * @Author 侯文君
  * @Date 2025-09-02 12:37
  * @LastEditors 侯文君
- * @LastEditTime 2025-09-10 10:27
+ * @LastEditTime 2025-09-10 14:10
  */
 
 /**
@@ -101,28 +101,29 @@ export const AvailableModels = [
   {
     id: 'deepseek-chat',
     name: 'DeepSeek-Chat',
-    description: 'DeepSeekV3.1，官方chat模型',
+    description: 'DeepSeekV3.1，非思考模式模型',
     provider: 'deepseek',
     middleware: undefined,
   },
   {
     id: 'deepseek-reasoner',
     name: 'DeepSeek-Reasoner',
-    description: 'DeepSeek-R1，官方推理模型',
+    description: 'DeepSeekV3.1，思考模式模型',
     provider: 'deepseek',
-    middleware: undefined,
-  },
-  {
-    id: 'qwen3-coder-flash',
-    name: 'Qwen3-Coder-Flash',
-    description: '千问3代码生成模型，支持1M上下文',
-    provider: 'bailian',
     middleware: undefined,
   },
   {
     id: 'qwen3-coder-plus',
     name: 'Qwen3-Coder-Plus',
     description: '千问3代码生成模型，支持1M上下文',
+    provider: 'bailian',
+    middleware: undefined,
+  },
+  {
+    id: 'qwen-plus',
+    name: 'Qwen3-Plus',
+    description:
+      'Qwen3系列Plus模型，实现思考模式和非思考模式的有效融合，可在对话中切换模式。',
     provider: 'bailian',
     middleware: undefined,
   },

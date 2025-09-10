@@ -3,7 +3,7 @@
  * @Author 侯文君
  * @Date 2025-08-18 18:49
  * @LastEditors 侯文君
- * @LastEditTime 2025-09-08 11:02
+ * @LastEditTime 2025-09-10 14:22
  */
 
 import { stepCountIs, streamText } from 'ai';
@@ -28,8 +28,13 @@ export default defineLazyEventHandler(async () => {
       model: llmProvider(model),
       temperature,
       tools: { ...mcpTools, ...localTools },
-      stopWhen: stepCountIs(10),
+      stopWhen: stepCountIs(5),
       system: templateGenPrompt(),
+      providerOptions: {
+        bailian: {
+          enable_thinking: false,
+        },
+      },
       messages,
     });
 

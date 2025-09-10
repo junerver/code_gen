@@ -3,7 +3,7 @@
  * @Author 侯文君
  * @Date 2025-08-25 15:37
  * @LastEditors 侯文君
- * @LastEditTime 2025-09-10 08:32
+ * @LastEditTime 2025-09-10 10:20
  */
 
 import { createOpenAICompatible } from '@ai-sdk/openai-compatible';
@@ -39,6 +39,15 @@ const siliconflow = createOpenAICompatible<
   name: 'siliconflow',
 });
 
+/**
+ * 阿里百炼模型封装
+ */
+const bailian = createOpenAICompatible({
+  baseURL: useRuntimeConfig().bailianApiUrl,
+  apiKey: useRuntimeConfig().bailianApiKey,
+  name: 'bailian',
+});
+
 const deepseek = createDeepSeek({
   apiKey: useRuntimeConfig().deepseekApiKey,
 });
@@ -65,6 +74,9 @@ function createLanguageModel(
       break;
     case 'deepseek':
       baseModel = deepseek(id);
+      break;
+    case 'bailian':
+      baseModel = bailian(id);
       break;
     default:
       throw new Error(`不支持的模型提供商: ${provider}`);

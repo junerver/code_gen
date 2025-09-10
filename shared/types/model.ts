@@ -3,7 +3,7 @@
  * @Author 侯文君
  * @Date 2025-09-02 12:37
  * @LastEditors 侯文君
- * @LastEditTime 2025-09-09 17:22
+ * @LastEditTime 2025-09-10 10:27
  */
 
 /**
@@ -110,6 +110,20 @@ export const AvailableModels = [
     name: 'DeepSeek-Reasoner',
     description: 'DeepSeek-R1，官方推理模型',
     provider: 'deepseek',
+    middleware: undefined,
+  },
+  {
+    id: 'qwen3-coder-flash',
+    name: 'Qwen3-Coder-Flash',
+    description: '千问3代码生成模型，支持1M上下文',
+    provider: 'bailian',
+    middleware: undefined,
+  },
+  {
+    id: 'qwen3-coder-plus',
+    name: 'Qwen3-Coder-Plus',
+    description: '千问3代码生成模型，支持1M上下文',
+    provider: 'bailian',
     middleware: undefined,
   },
 ] as const;

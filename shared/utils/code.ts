@@ -3,7 +3,7 @@
  * @Author 侯文君
  * @Date 2025-08-20 16:45
  * @LastEditors 侯文君
- * @LastEditTime 2025-09-09 10:33
+ * @LastEditTime 2025-09-11 09:42
  */
 
 export type ExtractCodeResult = {
@@ -191,4 +191,37 @@ export const buildTsconfig = () => {
     "target": 3.3
   }
 }`;
+};
+
+/**
+ * 语言标签与文件扩展名映射表
+ */
+const LanguageMap: { [key: string]: string } = {
+  javascript: 'js',
+  typescript: 'ts',
+  python: 'py',
+  java: 'java',
+  c: 'c',
+  cpp: 'cpp',
+  csharp: 'cs',
+  php: 'php',
+  go: 'go',
+  ruby: 'rb',
+  perl: 'pl',
+  sql: 'sql',
+  html: 'html',
+  css: 'css',
+  xml: 'xml',
+  json: 'json',
+  markdown: 'md',
+  vue: 'vue',
+};
+
+/**
+ * 获取文件扩展名
+ * @param language 语言标签
+ * @returns 文件扩展名
+ */
+export const getFileExtension = (language?: string) => {
+  return language ? LanguageMap[language.toLowerCase()] || 'txt' : 'txt';
 };

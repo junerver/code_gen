@@ -12,6 +12,7 @@ import { type AvailableModelNames, DEFAULT_MODEL } from '#shared/types/model';
 export const useChat = (repository?: IConversationRepository) => {
   // 获取会话存储 - 支持依赖注入，优先使用传入的repository
   const conversationStore = repository || new PiniaConversationRepository();
+  // llm是否处于回复中，用于禁用sender组件
   const loading = ref(false);
   const error = ref<string | undefined>();
   // 模型选择，填入的是模型的名称，对应在模型提供器中的命名
@@ -115,12 +116,9 @@ export const useChat = (repository?: IConversationRepository) => {
 
   /**
    * 生成AI回复的核心逻辑
-   * @param assistantMessageId 助手消息ID
    * @returns 生成的回复内容
    */
-  const generateResponse = async (
-    assistantMessageId: string
-  ): Promise<string> => {
+  const generateResponse = async (): Promise<string> => {
     // 调用流式API
     const response = await fetch('/api/chat', {
       method: 'POST',
@@ -135,6 +133,7 @@ export const useChat = (repository?: IConversationRepository) => {
         })),
       }),
     });
+    const assistantMessageId = addAssistantMessage();
 
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
@@ -244,11 +243,8 @@ export const useChat = (repository?: IConversationRepository) => {
       // 添加用户消息
       addUserMessage(content);
 
-      // 创建助手消息占位符
-      const assistantMessageId = addAssistantMessage();
-
       // 生成回复
-      await generateResponse(assistantMessageId);
+      await generateResponse();
     } catch (err) {
       error.value = err instanceof Error ? err.message : '发送消息失败';
       console.error('发送消息失败:', err);
@@ -315,11 +311,8 @@ export const useChat = (repository?: IConversationRepository) => {
         );
       }
 
-      // 创建新的助手消息占位符
-      const assistantMessageId = addAssistantMessage();
-
       // 生成新的回复
-      await generateResponse(assistantMessageId);
+      await generateResponse();
     } catch (err) {
       error.value = err instanceof Error ? err.message : '重新生成失败';
       console.error('重新生成失败:', err);

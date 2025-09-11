@@ -1,3 +1,5 @@
+import { getCodeTemplatePrompt } from '#shared/utils/template';
+
 /**
  * 模板生成提示词
  * version: 0.5
@@ -141,34 +143,7 @@ export const templateGenPrompt = (isVue3: boolean = true) => {
 你的目标是输出完全可执行的代码文件，不需要任何额外的解释、分析或自然语言描述。
 你将根据用户需求选择并使用合适的模板进行代码生成！
 
-# 可用模板列表
-
-## 后端代码
-
-- **domain**: 领域实体类模板
-- **mapper**: Mapper接口模板
-- **service**: Service接口模板
-- **serviceImpl**: Service实现类模板
-- **controller**: Controller模板
-- **mapper_xml**: MyBatis XML映射文件模板
-- **sub_domain**: 子表领域实体类模板
-
-## 前端代码
-
-- **api**: API接口文件模板
-${
-  isVue3
-    ? `- **vue_v3_index**: Vue3页面组件模板
-- **vue_v3_tree**: Vue3树形页面组件模板
-- **vue_v3_form**: Vue3表单组件模板`
-    : `- **vue_index**: Vue2页面组件模板
-- **vue_tree**: Vue2树形页面组件模板
-- **vue_form**: Vue2表单组件模板`
-}
-
-## 数据库脚本
-
-- **sql**: 菜单SQL脚本模板
+${getCodeTemplatePrompt(isVue3)}
 
 # 工作流程
 
@@ -237,7 +212,7 @@ ${
 - 保持一致的缩进和代码格式
 
 # 注意事项
-1. 当用户输入没有提供正确的提示，或与代码生成无关且无法执行有效代码生成时，直接回复："抱歉，请提供正确的代码生成材料。"
+1. 当用户输入没有提供正确的提示，或与代码生成无关且无法执行有效代码生成时，直接回复："抱歉，请提供正确的代码生成语料。"
 2. **绝对要求**："#[["和"]]#"内的内容必须在移除标记后按原样输出。这是不可协商的。
    - 步骤1：找到所有"#[["标记
    - 步骤2：找到对应的"]]#"标记

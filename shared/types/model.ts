@@ -3,7 +3,7 @@
  * @Author 侯文君
  * @Date 2025-09-02 12:37
  * @LastEditors 侯文君
- * @LastEditTime 2025-09-10 14:10
+ * @LastEditTime 2025-09-10 17:29
  */
 
 /**
@@ -124,6 +124,14 @@ export const AvailableModels = [
     name: 'Qwen3-Plus',
     description:
       'Qwen3系列Plus模型，实现思考模式和非思考模式的有效融合，可在对话中切换模式。',
+    provider: 'bailian',
+    middleware: undefined,
+  },
+  {
+    id: 'deepseek-v3',
+    name: 'DeepSeek-V3',
+    description:
+      'DeepSeek-V3 为自研 MoE 模型，671B 参数，激活 37B，在 14.8T token 上进行了预训练，在长文本、代码、数学、百科、中文 能力上表现优秀。',
     provider: 'bailian',
     middleware: undefined,
   },

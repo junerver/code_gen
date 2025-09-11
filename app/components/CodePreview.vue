@@ -5,6 +5,8 @@ import {
   buildElementPlusSetup,
   buildHeadHtml,
   buildPlaygroundMain,
+  buildTsconfig,
+  generateImportMap,
 } from '#shared/utils/code';
 import { genPreviewCode } from '#shared/utils/repair-vue';
 

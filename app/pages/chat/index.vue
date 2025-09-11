@@ -101,7 +101,7 @@
               >
                 <!-- 重新生成 -->
                 <el-button
-                  type="info"
+                  type="primary"
                   :icon="Refresh"
                   size="small"
                   circle
@@ -109,7 +109,7 @@
                 />
                 <!-- 提取组件源码 -->
                 <el-button
-                  color="#626aef"
+                  type="info"
                   :icon="DocumentCopy"
                   size="small"
                   circle
@@ -117,11 +117,19 @@
                 />
                 <!-- 预览组件 -->
                 <el-button
-                  color="#67c23a"
+                  type="success"
                   :icon="View"
                   size="small"
                   circle
                   @click="handlePreview(item)"
+                />
+                <!-- 下载源码 -->
+                <el-button
+                  type="warning"
+                  :icon="Download"
+                  size="small"
+                  circle
+                  @click="handleDownload(item)"
                 />
               </div>
             </template>
@@ -174,8 +182,9 @@ import {
   Plus,
   Refresh,
   View,
+  Download,
 } from '@element-plus/icons-vue';
-import { ElMessage, ElMessageBox } from 'element-plus';
+import { ElMessage, ElMessageBox, type FooterInstance } from 'element-plus';
 import { computed, nextTick, onMounted, onUnmounted, ref } from 'vue';
 import {
   BubbleList,
@@ -194,6 +203,7 @@ import { useChat } from '~/composables/useChat';
 import type { ChatMessage } from '~/types/chat';
 import type { Conversation } from '~/types/conversation';
 import { extractCode } from '#shared/utils/code';
+import { getFileNameFromMessage } from '#shared/utils/template';
 
 const previewRef =
   useTemplateRef<InstanceType<typeof CodePreview>>('previewRef');
@@ -221,7 +231,7 @@ const inputMessage = ref('');
 const messagesContainer = ref<HTMLElement>();
 const bubbleListRef = ref();
 const senderRef = ref();
-const chatFooterRef = ref<HTMLElement>();
+const chatFooterRef = ref<FooterInstance>();
 const senderHeight = ref(170); // 默认最小高度
 
 // 从store获取会话相关数据
@@ -342,6 +352,23 @@ const handlePreview = (item: ChatMessage): void => {
     previewRef.value?.openDialog(sourceCode);
   } else {
     ElMessage.warning('仅支持 Vue3 组件源码预览');
+  }
+};
+
+/**
+ * 处理源码下载
+ */
+const handleDownload = (item: ChatMessage): void => {
+  if (item.role !== 'assistant') return;
+  const { sourceCode } = extractCode(item.content);
+  if (sourceCode) {
+    const blob = new Blob([sourceCode], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = getFileNameFromMessage(item);
+    a.click();
+    URL.revokeObjectURL(url);
   }
 };
 
@@ -467,24 +494,46 @@ const scrollToBottom = async (): Promise<void> => {
   bubbleListRef.value?.scrollToBottom();
 };
 
-// 监听 Sender 高度变化
+// ResizeObserver 实例
+let resizeObserver: ResizeObserver | null = null;
+
+/**
+ * 监听 Sender 高度变化
+ */
 const observeSenderHeight = () => {
   if (!chatFooterRef.value) return;
 
-  const resizeObserver = new ResizeObserver(entries => {
+  // 获取 el-footer 组件的根元素
+  const footerElement = chatFooterRef.value.$el || chatFooterRef.value;
+
+  // 确保获取到的是 DOM 元素
+  if (!(footerElement instanceof Element)) {
+    console.warn('chatFooterRef 不是有效的 DOM 元素');
+    return;
+  }
+
+  // 如果已存在观察器，先断开连接
+  if (resizeObserver) {
+    resizeObserver.disconnect();
+  }
+
+  resizeObserver = new ResizeObserver(entries => {
     for (const entry of entries) {
       const { height } = entry.contentRect;
       senderHeight.value = Math.max(height, 170); // 确保最小高度为170px
     }
   });
 
-  resizeObserver.observe(chatFooterRef.value);
-
-  // 组件卸载时清理观察器
-  onUnmounted(() => {
-    resizeObserver.disconnect();
-  });
+  resizeObserver.observe(footerElement);
 };
+
+// 组件卸载时清理观察器
+onUnmounted(() => {
+  if (resizeObserver) {
+    resizeObserver.disconnect();
+    resizeObserver = null;
+  }
+});
 
 // 计算 chat-main 的动态高度
 const chatMainStyle = computed(() => {
@@ -555,6 +604,8 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  height: 70px; /* 与 chat-header 保持一致的高度 */
+  box-sizing: border-box; /* 确保 padding 包含在高度内 */
 }
 
 .conversations-header h3 {

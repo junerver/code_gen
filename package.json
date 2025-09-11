@@ -12,6 +12,7 @@
     "prepare": "husky install"
   },
   "dependencies": {
+    "@ai-sdk/deepseek": "^1.0.15",
     "@ai-sdk/openai": "^2.0.16",
     "@ai-sdk/openai-compatible": "^1.0.11",
     "@ai-sdk/vue": "^2.0.16",

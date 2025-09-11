@@ -5,7 +5,10 @@ import {
   buildElementPlusSetup,
   buildHeadHtml,
   buildPlaygroundMain,
+  buildTsconfig,
+  generateImportMap,
 } from '#shared/utils/code';
+import { genPreviewCode } from '#shared/utils/repair-vue';
 
 const elementPlusVersion = '2.10.7';
 const elementIconVersion = '2.3.2';

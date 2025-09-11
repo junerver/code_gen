@@ -3,7 +3,7 @@
  * @Author 侯文君
  * @Date 2025-09-02 12:37
  * @LastEditors 侯文君
- * @LastEditTime 2025-09-08 11:40
+ * @LastEditTime 2025-09-10 17:29
  */
 
 /**
@@ -14,7 +14,8 @@ export type SiliconflowChatModelIds =
   | 'deepseek-ai/DeepSeek-V3.1'
   | 'Qwen/Qwen2.5-72B-Instruct-128K'
   | 'Qwen/Qwen3-Coder-480B-A35B-Instruct'
-  | 'Qwen/Qwen3-Coder-30B-A3B-Instruct';
+  | 'Qwen/Qwen3-Coder-30B-A3B-Instruct'
+  | 'moonshotai/Kimi-Dev-72B';
 
 export type SiliconflowCompletionModelIds = string & {};
 
@@ -23,55 +24,125 @@ export type SiliconflowEmbeddingModelIds = string & {};
 export type SiliconflowImageModelIds = string & {};
 
 // 默认使用的模型
-export const DEFAULT_MODEL = 'Qwen3-Coder-30B';
+export const DEFAULT_MODEL = 'DeepSeek-Chat';
 
 /**
  * 可用模型列表
+ * id：模型ID
+ * name：模型名称
+ * description：模型描述
+ * provider：模型提供方
+ * middleware：模型中间件
  */
 export const AvailableModels = [
   {
     id: 'deepseek-ai/DeepSeek-R1',
     name: 'DeepSeek-R1',
     description: '最新推理模型，擅长数学和编程',
+    provider: 'siliconflow',
+    middleware: undefined,
   },
   {
     id: 'deepseek-ai/DeepSeek-V3.1',
     name: 'DeepSeek-V3.1',
     description: '通用对话模型，平衡性能优秀',
+    provider: 'siliconflow',
+    middleware: undefined,
   },
   {
     id: 'Qwen/Qwen2.5-72B-Instruct-128K',
     name: 'Qwen2.5-72B',
     description: '大参数模型，支持128K上下文',
+    provider: 'siliconflow',
+    middleware: undefined,
   },
   {
     id: 'Qwen/Qwen3-Coder-480B-A35B-Instruct',
     name: 'Qwen3-Coder-480B',
     description: '专业代码生成模型，超大参数',
+    provider: 'siliconflow',
+    middleware: undefined,
   },
   {
     id: 'Qwen/Qwen3-Coder-30B-A3B-Instruct',
     name: 'Qwen3-Coder-30B',
     description: '轻量级代码生成模型',
+    provider: 'siliconflow',
+    middleware: undefined,
+  },
+  {
+    id: 'moonshotai/Kimi-Dev-72B',
+    name: 'Kimi-Dev-72B',
+    description: '新一代开源编程大模型，擅长数学和编程',
+    provider: 'siliconflow',
+    middleware: undefined,
   },
   {
     id: 'qwen2.5:7b',
     name: 'Qwen2.5-7B',
-    description: '本地ollama模型，支持32K上下文',
+    description: '千问2.5模型，支持32K上下文',
+    provider: 'ollama',
+    middleware: undefined,
   },
   {
     id: 'qwen2.5-coder:7b',
     name: 'Qwen2.5-Coder-7B',
-    description: '本地ollama模型，支持32K上下文，轻量级代码生成模型',
+    description: '千问2.5模型，支持32K上下文，轻量级代码生成模型',
+    provider: 'ollama',
+    middleware: undefined,
   },
   {
     id: 'qwen3:4b',
     name: 'Qwen3-4B',
-    description: '本地ollama模型，支持256K上下文',
+    description: '千问3推理模型，支持256K上下文',
+    provider: 'ollama',
+    middleware: 'think',
+  },
+  {
+    id: 'deepseek-chat',
+    name: 'DeepSeek-Chat',
+    description: 'DeepSeekV3.1，非思考模式模型',
+    provider: 'deepseek',
+    middleware: undefined,
+  },
+  {
+    id: 'deepseek-reasoner',
+    name: 'DeepSeek-Reasoner',
+    description: 'DeepSeekV3.1，思考模式模型',
+    provider: 'deepseek',
+    middleware: undefined,
+  },
+  {
+    id: 'qwen3-coder-plus',
+    name: 'Qwen3-Coder-Plus',
+    description: '千问3代码生成模型，支持1M上下文',
+    provider: 'bailian',
+    middleware: undefined,
+  },
+  {
+    id: 'qwen-plus',
+    name: 'Qwen3-Plus',
+    description:
+      'Qwen3系列Plus模型，实现思考模式和非思考模式的有效融合，可在对话中切换模式。',
+    provider: 'bailian',
+    middleware: undefined,
+  },
+  {
+    id: 'deepseek-v3',
+    name: 'DeepSeek-V3',
+    description:
+      'DeepSeek-V3 为自研 MoE 模型，671B 参数，激活 37B，在 14.8T token 上进行了预训练，在长文本、代码、数学、百科、中文 能力上表现优秀。',
+    provider: 'bailian',
+    middleware: undefined,
   },
 ] as const;
 
 /**
+ * 可用模型配置
+ */
+export type AvailableModelConfig = (typeof AvailableModels)[number];
+
+/**
  * 全部可用的模型名称类型
  */
-export type AvailableModelNames = (typeof AvailableModels)[number]['name'];
+export type AvailableModelNames = AvailableModelConfig['name'];

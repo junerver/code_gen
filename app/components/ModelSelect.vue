@@ -28,7 +28,9 @@
           >
             <div class="model-info">
               <div class="model-name">{{ model.name }}</div>
-              <div class="model-description">{{ model.description }}</div>
+              <div class="model-description">
+                {{ displayDescription(model) }}
+              </div>
             </div>
             <el-icon v-if="modelValue === model.name" class="check-icon">
               <Check />
@@ -44,6 +46,7 @@
 import { ref, computed } from 'vue';
 import { ArrowDown, Check } from '@element-plus/icons-vue';
 import {
+  type AvailableModelConfig,
   type AvailableModelNames,
   AvailableModels,
   DEFAULT_MODEL,
@@ -77,6 +80,10 @@ const selectedModelDisplay = computed(() => {
 const selectModel = (modelName: AvailableModelNames) => {
   modelValue.value = modelName;
   showPopover.value = false; // 选择后自动关闭popover
+};
+
+const displayDescription = (modelConfig: AvailableModelConfig) => {
+  return `[${modelConfig.provider}]${modelConfig.description}`;
 };
 </script>
 

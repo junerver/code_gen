@@ -29,6 +29,13 @@ const mysqlClientPromise = experimental_createMCPClient({
   transport: new StdioClientTransport({
     command: 'uv',
     args: ['--directory', MCP_SERVER_DIRECTORY, 'run', 'mysql_mcp'],
+    env: {
+      MYSQL_HOST: '192.168.187.188',
+      MYSQL_PORT: '3306',
+      MYSQL_USER: 'research',
+      MYSQL_PASSWORD: 'JrkxS@rsh2024.',
+      MYSQL_DATABASE: 'jkr_framework',
+    },
   }),
 });
 

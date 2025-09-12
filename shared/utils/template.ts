@@ -3,11 +3,16 @@
  * @Author 侯文君
  * @Date 2025-09-11 09:46
  * @LastEditors 侯文君
- * @LastEditTime 2025-09-11 10:51
+ * @LastEditTime 2025-09-12 10:03
  */
 
 import type { ModelMessage } from 'ai';
 
+/**
+ * 获取代码模板提示词
+ * @param isVue3 是否为Vue3项目
+ * @returns 代码模板提示词
+ */
 export const getCodeTemplatePrompt = (isVue3: boolean = true) => {
   return `
 # 可用模板列表
@@ -63,36 +68,47 @@ export const getFileNameFromMessage = (message: ModelMessage) => {
   console.log('templateName', templateName);
   switch (templateName) {
     case 'domain':
-      return 'Domain.java';
-    case 'mapper':
-      return 'Mapper.java';
-    case 'service':
-      return 'Service.java';
     case 'serviceImpl':
-      return 'ServiceImpl.java';
     case 'controller':
-      return 'Controller.java';
-    case 'mapper_xml':
-      return 'Mapper.xml';
     case 'sub_domain':
-      return 'SubDomain.java';
+      return extractJavaFileName(message.content as string);
+    case 'mapper':
+    case 'service':
+      return extractInterfaceFileName(message.content as string);
+    case 'mapper_xml':
+      return extractMapperXmlFileName(message.content as string);
     case 'api':
       return 'api.js';
     case 'vue_v3_index':
-      return 'Index.vue';
-    case 'vue_v3_tree':
-      return 'Tree.vue';
-    case 'vue_v3_form':
-      return 'Form.vue';
     case 'vue_index':
       return 'Index.vue';
     case 'vue_tree':
+    case 'vue_v3_tree':
       return 'Tree.vue';
     case 'vue_form':
+    case 'vue_v3_form':
       return 'Form.vue';
     case 'sql':
       return 'sql.sql';
     default:
-      return 'unknow.txt';
+      return 'source.txt';
   }
+};
+
+const extractJavaFileName = (content: string) => {
+  const classNameRegex = /class\s+(\w+)/;
+  const match = content.match(classNameRegex);
+  return match ? match[1] + '.java' : 'source.txt';
+};
+
+const extractInterfaceFileName = (content: string) => {
+  const classNameRegex = /public\s+interface\s+(\w+)/;
+  const match = content.match(classNameRegex);
+  return match ? match[1] + '.java' : 'source.txt';
+};
+
+const extractMapperXmlFileName = (content: string) => {
+  const classNameRegex = /<mapper\s+namespace="[\w.]+\.(\w+Mapper)"/;
+  const match = content.match(classNameRegex);
+  return match ? match[1] + '.xml' : 'source.txt';
 };

@@ -198,7 +198,7 @@ export const useChat = (repository?: IConversationRepository) => {
             }
             if (data.type === 'tool-input-start') {
               // 工具开始执行，清空工具消息
-              accumulatedContent += `\n> #### 工具调用：\n> - 开始执行工具调用：\`${data.toolName}\``;
+              accumulatedContent += `\n> #### 工具调用：\n> - 开始执行工具调用：\`${data.toolName}\`\n`;
               updateAssistantMessage(assistantMessageId, accumulatedContent);
               toolsCallingContent = '';
             }
@@ -208,12 +208,12 @@ export const useChat = (repository?: IConversationRepository) => {
             }
             if (data.type === 'tool-input-available') {
               // 执行工具调用
-              accumulatedContent += `\n> - 工具输入参数：\`${toolsCallingContent}\``;
+              accumulatedContent += `> - 工具输入参数：\`${toolsCallingContent}\`\n`;
               updateAssistantMessage(assistantMessageId, accumulatedContent);
             }
             if (data.type === 'tool-output-available') {
               // 工具调用完毕，拼接工具输出
-              accumulatedContent += `\n> - 工具调用结果：${data.isError ? '**错误**' : '**成功**'}\n\n`;
+              accumulatedContent += `> - 工具调用结果：${data.isError ? '**错误**' : '**成功**'}\n\n`;
               updateAssistantMessage(assistantMessageId, accumulatedContent);
             }
           } catch (parseError) {

@@ -127,6 +127,7 @@ export const useChat = (repository?: IConversationRepository) => {
       },
       body: JSON.stringify({
         model: selectedModel.value,
+        conversationId: conversationStore.activeConversationId,
         messages: messages.value.map(msg => ({
           role: msg.role,
           content: msg.content,

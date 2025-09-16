@@ -3,7 +3,7 @@
  * @Author 侯文君
  * @Date 2025-08-18 18:49
  * @LastEditors 侯文君
- * @LastEditTime 2025-09-10 14:22
+ * @LastEditTime 2025-09-15 15:29
  */
 
 import { stepCountIs, streamText } from 'ai';
@@ -36,6 +36,25 @@ export default defineLazyEventHandler(async () => {
         },
       },
       messages,
+      onStepFinish: ({ toolResults }) => {
+        for (const toolResult of toolResults) {
+          if (toolResult.dynamic) {
+            // Dynamic tool: input is 'unknown'
+            console.log('Dynamic:', toolResult.toolName, toolResult.input);
+            continue;
+          }
+
+          switch (toolResult.toolName) {
+            case 'prepare_template_context':
+              console.log(
+                'prepare_template_context：',
+                toolResult.input.table_name,
+                toolResult.output.structuredContent
+              ); // typed as string
+              break;
+          }
+        }
+      },
     });
 
     return result.toUIMessageStreamResponse();

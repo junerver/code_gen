@@ -3,7 +3,7 @@
  * @Author 侯文君
  * @Date 2025-09-11 09:46
  * @LastEditors 侯文君
- * @LastEditTime 2025-09-12 10:03
+ * @LastEditTime 2025-09-15 15:41
  */
 
 import type { ModelMessage } from 'ai';
@@ -81,15 +81,18 @@ export const getFileNameFromMessage = (message: ModelMessage) => {
       return 'api.js';
     case 'vue_v3_index':
     case 'vue_index':
-      return 'Index.vue';
+      return 'index.vue';
     case 'vue_tree':
     case 'vue_v3_tree':
       return 'Tree.vue';
     case 'vue_form':
     case 'vue_v3_form':
       return 'Form.vue';
-    case 'sql':
-      return 'sql.sql';
+    case 'sql': {
+      const now = new Date();
+      const timestamp = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}`;
+      return `sql_${timestamp}.sql`;
+    }
     default:
       return 'source.txt';
   }

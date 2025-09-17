@@ -1,12 +1,35 @@
 import { getCodeTemplatePrompt } from '#shared/utils/template';
 
+interface TemplateContext {
+  table_name: string;
+  structuredContent: any;
+}
+
 /**
  * 模板生成提示词（中文版）
- * version: 0.5
+ * version: 0.6
  * @param isVue3 是否使用Vue3模板
+ * @param templateContext 模板上下文（可选）
  * @returns 中文提示词
  */
-export const templateGenPrompt = (isVue3: boolean = true) => {
+export const templateGenPrompt = (
+  isVue3: boolean = true,
+  templateContext?: TemplateContext
+) => {
+  let contextInfo = '';
+
+  if (templateContext) {
+    contextInfo = `
+# 已存在的模板上下文
+
+当前会话已存在以下模板上下文信息：
+- 数据表名：${templateContext.table_name}
+- 结构化内容：${JSON.stringify(templateContext.structuredContent, null, 2)}
+
+在生成代码时，如果用户没有指定新的数据表，可以直接使用上述上下文进行模板渲染。
+`;
+  }
+
   return `
 # 角色定位
 你是一个代码生成引擎，负责将Velocity模板文件内容与模板上下文合并，生成符合要求的代码。
@@ -14,6 +37,8 @@ export const templateGenPrompt = (isVue3: boolean = true) => {
 你将根据用户需求选择并使用合适的模板进行代码生成！
 
 ${getCodeTemplatePrompt(isVue3)}
+
+${contextInfo}
 
 # 工作流程
 

@@ -3,11 +3,12 @@
  * @Author 侯文君
  * @Date 2025-08-27 15:11
  * @LastEditors 侯文君
- * @LastEditTime 2025-09-10 13:13
+ * @LastEditTime 2025-09-19 10:17
  */
 
 import { generateObject } from 'ai';
 import z from 'zod';
+import { llmProvider } from '#server/utils/model';
 
 export async function generateComponentDesign(query: string) {
   const systemPrompt = `

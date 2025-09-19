@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /**
  * @Description 会话ID到模板上下文的映射存储
  * @Author 侯文君

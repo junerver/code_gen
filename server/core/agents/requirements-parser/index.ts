@@ -12,14 +12,14 @@ import { llmProvider } from '#server/utils/model';
 import crypto from 'crypto';
 import {
   DOMAIN_KNOWLEDGE_BASE,
-  matchDomain,
   getDomainBusinessRules,
   getDomainEntities,
+  matchDomain,
 } from './domain-knowledge';
 import { ConfidenceScorer } from './confidence-scorer';
 import {
-  ParsedRequirementSchema,
   type ParsedRequirement,
+  ParsedRequirementSchema,
   type RequirementsParsingResult,
 } from './types';
 
@@ -743,50 +743,101 @@ Provide detailed analysis with high confidence threshold. All fields must be pro
   /**
    * Generate additional clarification questions if needed
    */
-  async generateAdditionalQuestions(
-    currentRequirement: ParsedRequirement,
-    context: string
-  ): Promise<string[]> {
-    const systemPrompt = `You are a requirements analysis expert. Generate specific, targeted clarification questions to improve requirements quality.`;
+  /**
+   * 根据需求文档进行业务建模
+   * @param requirementDocument 完整的需求文档
+   * @returns 结构化的业务模型
+   */
+  async parseFromDocument(
+    requirementDocument: string
+  ): Promise<RequirementsParsingResult> {
+    try {
+      console.log('开始根据需求文档进行业务建模', {
+        documentLength: requirementDocument.length,
+      });
 
-    const userPrompt = `Based on the following requirement analysis, generate 3-5 specific clarification questions that would help improve the accuracy and completeness of the requirements:
+      // 检测业务领域
+      const domain = this.context?.domain || matchDomain(requirementDocument);
 
-**Current Analysis:**
-- Entities: ${currentRequirement.entities.map(e => e.name).join(', ')}
-- Relationships: ${currentRequirement.relationships.length} identified
-- Business Rules: ${currentRequirement.businessRules.length} defined
-- Confidence: ${Math.round(currentRequirement.confidence * 100)}%
+      // 获取领域特定上下文
+      const domainContext = domain ? DOMAIN_KNOWLEDGE_BASE[domain] : null;
+      const domainEntities = domain ? getDomainEntities(domain) : [];
+      const domainRules = domain ? getDomainBusinessRules(domain) : [];
 
-**Context:** ${context}
+      // 生成结构化业务模型
+      const parsedResult = await this.generateStructuredRequirements(
+        requirementDocument,
+        domain,
+        domainContext,
+        domainEntities,
+        domainRules
+      );
 
-**Existing Questions:**
-${currentRequirement?.clarificationNeeded?.map(q => `- ${q.question}`).join('\n')}
+      // 后处理确保模式合规
+      const processedResult = this.postProcessRequirement(
+        parsedResult,
+        requirementDocument
+      );
 
-Generate questions that:
-1. Address logical gaps or inconsistencies
-2. Clarify business rules and edge cases
-3. Specify technical requirements
-4. Define performance and security needs
-5. Clarify user experience expectations
+      // 验证解析结果
+      const validation = await this.validateParsedRequirements(processedResult);
+      if (!validation.valid) {
+        return {
+          success: false,
+          error: '业务建模验证失败',
+          validationErrors: validation.errors,
+          retryable: true,
+          suggestion:
+            '需求文档可能缺少关键信息，请检查功能需求和业务规则的完整性',
+        };
+      }
 
-Make questions specific, answerable, and focused on actionable information needed for implementation.`;
+      // 计算置信度
+      let confidenceScore = 0.8; // 基于完整需求文档的基础置信度
+      if (this.includeConfidenceAnalysis) {
+        const scorer = new ConfidenceScorer();
+        confidenceScore = await scorer.calculateConfidence(
+          processedResult,
+          requirementDocument
+        );
+        processedResult.confidence = confidenceScore;
+      }
 
-    const { text } = await generateText({
-      model: llmProvider(this.model),
-      temperature: 0.5,
-      system: systemPrompt,
-      prompt: userPrompt,
-    });
+      console.log('业务建模完成', {
+        entityCount: processedResult.entities?.length || 0,
+        relationshipCount: processedResult.relationships?.length || 0,
+        businessRuleCount: processedResult.businessRules?.length || 0,
+        confidence: Math.round(confidenceScore * 100),
+      });
 
-    return text.split('\n').filter(line => line.trim() && line.includes('?'));
+      return {
+        success: true,
+        data: processedResult,
+      };
+    } catch (error) {
+      console.error('业务建模过程中出错:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : '业务建模失败',
+        retryable: true,
+      };
+    }
   }
 }
 
-// Convenience function for direct usage
+// 便捷函数导出 - 支持传统文本解析和新的文档建模
 export async function parseRequirements(
   text: string,
   options?: ParseRequirementsOptions
 ): Promise<RequirementsParsingResult> {
   const parser = new RequirementsParserAgent(options);
   return parser.parse(text);
+}
+
+export async function parseRequirementsFromDocument(
+  requirementDocument: string,
+  options?: ParseRequirementsOptions
+): Promise<RequirementsParsingResult> {
+  const parser = new RequirementsParserAgent(options);
+  return parser.parseFromDocument(requirementDocument);
 }

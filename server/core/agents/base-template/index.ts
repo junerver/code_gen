@@ -8,7 +8,7 @@
 import { stepCountIs, streamText } from 'ai';
 import { initTemplateTools } from '#server/core/tools/mcp-tools';
 import { initLocalTools } from '#server/core/tools/local-tools';
-import { templateGenPrompt } from '#server/core/prompt/template-gen';
+import { templateGenPrompt } from '#server/core/agents/base-template/prompt/template-gen';
 import { llmProvider } from '#server/utils/model';
 import { templateContextStorage } from '#server/core/storage/template-context';
 import type { ChatRequest } from '#shared/types/api/chat';

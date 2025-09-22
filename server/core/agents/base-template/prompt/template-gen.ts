@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { getCodeTemplatePrompt } from '#shared/utils/template';
 
 interface TemplateContext {

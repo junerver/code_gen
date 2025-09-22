@@ -1,11 +1,8 @@
 <template>
   <div class="requirements-conversation-page">
     <div class="page-header">
-      <h1>Requirements Conversation</h1>
-      <p class="page-subtitle">
-        Use natural language to clarify your requirements through intelligent
-        dialogue
-      </p>
+      <h1>需求对话</h1>
+      <p class="page-subtitle">通过智能对话使用自然语言澄清您的需求</p>
     </div>
 
     <div class="page-content">
@@ -18,39 +15,39 @@
       <div v-if="completedDocument" class="document-section">
         <el-divider />
         <div class="document-header">
-          <h3>Generated Requirements Document</h3>
+          <h3>生成的需求文档</h3>
           <el-button
             v-if="canProceedToModeling"
             type="primary"
             @click="proceedToModeling"
           >
-            Proceed to Business Modeling
+            进入业务建模
           </el-button>
         </div>
         <el-tabs v-model="activeTab" class="document-tabs">
-          <el-tab-pane label="Overview" name="overview">
+          <el-tab-pane label="概览" name="overview">
             <div class="overview-section">
               <el-descriptions :column="2" border>
-                <el-descriptions-item label="Confidence Score">
+                <el-descriptions-item label="置信度评分">
                   <el-progress
                     :percentage="Math.round(completedDocument.confidence * 100)"
                     :status="getConfidenceStatus(completedDocument.confidence)"
                   />
                 </el-descriptions-item>
-                <el-descriptions-item label="Domain">{{
-                  completedDocument.domain || 'General'
+                <el-descriptions-item label="领域">{{
+                  completedDocument.domain || '通用'
                 }}</el-descriptions-item>
-                <el-descriptions-item label="Complexity">{{
-                  completedDocument.complexity || 'Medium'
+                <el-descriptions-item label="复杂度">{{
+                  completedDocument.complexity || '中等'
                 }}</el-descriptions-item>
-                <el-descriptions-item label="Estimated Effort">{{
-                  completedDocument.estimatedEffort || 'To be determined'
+                <el-descriptions-item label="预估工作量">{{
+                  completedDocument.estimatedEffort || '待确定'
                 }}</el-descriptions-item>
               </el-descriptions>
             </div>
           </el-tab-pane>
 
-          <el-tab-pane label="Entities" name="entities">
+          <el-tab-pane label="实体" name="entities">
             <div class="entities-section">
               <el-collapse v-model="expandedEntities">
                 <el-collapse-item
@@ -60,26 +57,26 @@
                   :name="entity.id"
                 >
                   <el-descriptions :column="1" size="small">
-                    <el-descriptions-item label="Type" :span="1">{{
+                    <el-descriptions-item label="类型" :span="1">{{
                       entity.type
                     }}</el-descriptions-item>
-                    <el-descriptions-item label="Complexity" :span="1">{{
+                    <el-descriptions-item label="复杂度" :span="1">{{
                       entity.complexity
                     }}</el-descriptions-item>
-                    <el-descriptions-item label="Description" :span="2">{{
+                    <el-descriptions-item label="描述" :span="2">{{
                       entity.description
                     }}</el-descriptions-item>
-                    <el-descriptions-item label="Attributes" :span="2">
+                    <el-descriptions-item label="属性" :span="2">
                       <el-table
                         :data="entity.attributes"
                         size="small"
                         style="width: 100%"
                       >
-                        <el-table-column prop="name" label="Name" width="120" />
-                        <el-table-column prop="type" label="Type" width="80" />
+                        <el-table-column prop="name" label="名称" width="120" />
+                        <el-table-column prop="type" label="类型" width="80" />
                         <el-table-column
                           prop="required"
-                          label="Required"
+                          label="必填"
                           width="80"
                         >
                           <template #default="{ row }">
@@ -87,14 +84,11 @@
                               :type="row.required ? 'success' : 'info'"
                               size="small"
                             >
-                              {{ row.required ? 'Yes' : 'No' }}
+                              {{ row.required ? '是' : '否' }}
                             </el-tag>
                           </template>
                         </el-table-column>
-                        <el-table-column
-                          prop="description"
-                          label="Description"
-                        />
+                        <el-table-column prop="description" label="描述" />
                       </el-table>
                     </el-descriptions-item>
                   </el-descriptions>
@@ -103,36 +97,36 @@
             </div>
           </el-tab-pane>
 
-          <el-tab-pane label="Relationships" name="relationships">
+          <el-tab-pane label="关系" name="relationships">
             <div class="relationships-section">
               <el-table
                 :data="completedDocument.relationships"
                 style="width: 100%"
               >
-                <el-table-column prop="from" label="From" width="120" />
-                <el-table-column prop="to" label="To" width="120" />
-                <el-table-column prop="type" label="Type" width="120" />
-                <el-table-column prop="description" label="Description" />
+                <el-table-column prop="from" label="从" width="120" />
+                <el-table-column prop="to" label="到" width="120" />
+                <el-table-column prop="type" label="类型" width="120" />
+                <el-table-column prop="description" label="描述" />
               </el-table>
             </div>
           </el-tab-pane>
 
-          <el-tab-pane label="Business Rules" name="rules">
+          <el-tab-pane label="业务规则" name="rules">
             <div class="rules-section">
               <el-table
                 :data="completedDocument.businessRules"
                 style="width: 100%"
               >
-                <el-table-column prop="entity" label="Entity" width="120" />
-                <el-table-column prop="rule" label="Rule" />
-                <el-table-column prop="priority" label="Priority" width="100">
+                <el-table-column prop="entity" label="实体" width="120" />
+                <el-table-column prop="rule" label="规则" />
+                <el-table-column prop="priority" label="优先级" width="100">
                   <template #default="{ row }">
                     <el-tag :type="getPriorityType(row.priority)" size="small">
                       {{ row.priority }}
                     </el-tag>
                   </template>
                 </el-table-column>
-                <el-table-column prop="category" label="Category" width="120" />
+                <el-table-column prop="category" label="类别" width="120" />
               </el-table>
             </div>
           </el-tab-pane>

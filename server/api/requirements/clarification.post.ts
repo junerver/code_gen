@@ -54,7 +54,11 @@ export default defineEventHandler(
         conversationId: body.conversationId,
       });
 
-      const result = await agent.processMessage(body.message, body.context);
+      const result = await agent.processMessage(
+        body.message,
+        body.context,
+        body.conversationId
+      );
 
       console.log(`Requirements conversation processed`, {
         conversationId: result.conversationId,

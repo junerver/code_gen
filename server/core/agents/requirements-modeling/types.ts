@@ -1,7 +1,10 @@
 /**
- * @Description Requirements Parser Types
+ * @Description Requirements Modeling Types
  * @Author Claude Code
  * @Date 2025-09-19
+ *
+ * 定义需求建模Agent使用的所有类型和Schema结构
+ * 用于确保结构化的业务模型具有一致的格式和验证标准
  */
 
 import { z } from 'zod';
@@ -143,7 +146,7 @@ export const ClarificationQuestionSchema = z.object({
 });
 
 // Parsed requirement with enhanced validation and scoring
-export const ParsedRequirementSchema = z.object({
+export const BusinessModelSchema = z.object({
   id: z.string().optional(),
   originalText: z
     .string()
@@ -201,10 +204,10 @@ export const DomainKnowledgeSchema = z.object({
   businessRules: z.array(z.string()).optional(),
 });
 
-// Requirements parsing result with validation status
-export const RequirementsParsingResultSchema = z.object({
+// Requirements modeling result with validation status
+export const RequirementsModelingResultSchema = z.object({
   success: z.boolean(),
-  data: ParsedRequirementSchema.optional(),
+  data: BusinessModelSchema.optional(),
   error: z.string().optional(),
   validationErrors: z
     .array(
@@ -224,8 +227,8 @@ export type BusinessEntity = z.infer<typeof BusinessEntitySchema>;
 export type EntityRelationship = z.infer<typeof EntityRelationshipSchema>;
 export type BusinessRule = z.infer<typeof BusinessRuleSchema>;
 export type ClarificationQuestion = z.infer<typeof ClarificationQuestionSchema>;
-export type ParsedRequirement = z.infer<typeof ParsedRequirementSchema>;
+export type BusinessModel = z.infer<typeof BusinessModelSchema>;
 export type DomainKnowledge = z.infer<typeof DomainKnowledgeSchema>;
-export type RequirementsParsingResult = z.infer<
-  typeof RequirementsParsingResultSchema
+export type RequirementsModelingResult = z.infer<
+  typeof RequirementsModelingResultSchema
 >;

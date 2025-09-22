@@ -7,7 +7,18 @@
       "Bash(chmod:*)",
       "Bash(bash)",
       "Bash(curl:*)",
-      "Bash(kill:*)"
+      "Bash(kill:*)",
+      "Bash(rm:*)",
+      "Bash(pnpm nuxt:*)",
+      "Bash(pnpm build:*)",
+      "Bash(node:*)",
+      "Bash(npx tsc:*)",
+      "Bash(cat:*)",
+      "Bash(dos2unix:*)",
+      "Bash(grep:*)",
+      "Bash(timeout:*)",
+      "Bash(/dev/null)",
+      "Bash(mv:*)"
     ],
     "deny": [],
     "ask": []

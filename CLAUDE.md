@@ -1,78 +1,97 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+本文件为 Claude Code (claude.ai/code) 在处理此代码仓库时提供指导。
 
-## Project Overview
+## 项目概述
 
-This is a Nuxt 4-based AI code generation chat application that integrates multiple LLM providers (SiliconFlow, DeepSeek, Ollama, Alibaba Bailian) with MCP (Model Context Protocol) support for tool calling capabilities.
+这是一个基于 Nuxt 4 的 AI 代码生成聊天应用，集成了多个 LLM 提供商（SiliconFlow、DeepSeek、Ollama、阿里百炼）并支持 MCP（Model Context Protocol）工具调用功能。
 
-## Essential Commands
+## 基本命令
 
 ```bash
-# Install dependencies (uses pnpm only)
+# 安装依赖（仅使用 pnpm）
 pnpm install
 
-# Development server
+# 开发服务器
 pnpm dev -o
 
-# Build for production
+# 生产环境构建
 pnpm build
 
-# Generate static site
+# 生成静态站点
 pnpm generate
 
-# Preview production build
+# 预览生产构建
 pnpm preview
 ```
 
-## Architecture Overview
+## 架构概述
 
-### Frontend Architecture (Nuxt 4 App Structure)
-- **app/** - Nuxt 4 application directory following the new flat structure
-  - **composables/useChat.ts** - Core chat functionality with streaming support, tool calling integration, and message management
-  - **stores/conversation.ts** - Pinia store managing conversation state, messages, and session persistence
-  - **pages/chat/index.vue** - Main chat interface
-  - **components/** - Reusable Vue components (CodePreview, ModelSelect)
+### 前端架构（Nuxt 4 应用结构）
+- **app/** - 遵循新的扁平结构的 Nuxt 4 应用目录
+  - **composables/useChat.ts** - 核心聊天功能，支持流式传输、工具调用集成和消息管理
+  - **stores/conversation.ts** - 管理对话状态、消息和会话持久化的 Pinia 存储
+  - **pages/chat/index.vue** - 主聊天界面
+  - **components/** - 可复用的 Vue 组件（CodePreview、ModelSelect）
 
-### Backend Architecture (Server API)
-- **server/api/chat.post.ts** - Main chat endpoint using Vercel AI SDK with streaming, tool calling, and multi-provider support
-- **server/utils/model.ts** - Dynamic model provider factory supporting SiliconFlow, DeepSeek, Ollama, and Bailian
-- **server/core/tools/** - MCP tools integration and local tools for enhanced AI capabilities
-- **server/core/prompt/** - Prompt templates for AI generation
+### 后端架构（服务器 API）
+- **server/api/chat.post.ts** - 使用 Vercel AI SDK 的主聊天端点，支持流式传输、工具调用和多提供商支持
+- **server/utils/model.ts** - 支持 SiliconFlow、DeepSeek、Ollama 和灵积的动态模型提供商工厂
+- **server/core/tools/** - MCP 工具集成和增强 AI 能力的本地工具
+- **server/core/prompt/** - AI 生成的提示模板
 
-### Shared Code
-- **shared/types/model.ts** - Centralized model configurations and provider definitions
-- **shared/utils/** - Common utilities for code processing, template handling, and string operations
+### 共享代码
+- **shared/types/model.ts** - 集中的模型配置和提供商定义
+- **shared/utils/** - 用于代码处理、模板处理和字符串操作的通用工具
 
-## Key Technical Patterns
+## 关键技术模式
 
-### Model Provider System
-The application uses a dynamic model provider architecture where models are configured in `shared/types/model.ts` and instantiated through the factory pattern in `server/utils/model.ts`. Supports middleware for reasoning extraction (e.g., `<think>` tags).
+### 模型提供商系统
+应用程序使用动态模型提供商架构，其中模型在 `shared/types/model.ts` 中配置，并通过 `server/utils/model.ts` 中的工厂模式实例化。支持推理提取的中间件（例如 `<think>` 标签）。
 
-### Streaming Chat Implementation
-Frontend uses native fetch API with streaming response handling in `useChat.ts`. Backend uses Vercel AI SDK's `streamText` with tool integration and step limiting (max 5 steps).
+### 流式聊天实现
+前端在 `useChat.ts` 中使用原生 fetch API 处理流式响应。后端使用 Vercel AI SDK 的 `streamText`，集成工具调用和步骤限制（最多 5 步）。
 
-### Tool Calling Architecture
-Integrates both MCP (Model Context Protocol) tools and local tools. Tools are initialized lazily and merged into the AI SDK's tool system for dynamic function calling during conversations.
+### 工具调用架构
+集成 MCP（Model Context Protocol）工具和本地工具。工具被延迟初始化并合并到 AI SDK 的工具系统中，用于对话期间的动态函数调用。
 
-### State Management Pattern
-Uses Pinia with repository pattern abstraction. The `PiniaConversationRepository` implements `IConversationRepository` interface, allowing for dependency injection and testability.
+### 状态管理模式
+使用带有仓库模式抽象的 Pinia。`PiniaConversationRepository` 实现 `IConversationRepository` 接口，允许依赖注入和可测试性。
 
-## Environment Configuration
+## 环境配置
 
-Required environment variables (copy `.env.example` to `.env`):
-- `NUXT_SILICON_FLOW_API_URL` - SiliconFlow API endpoint
-- `NUXT_SILICON_FLOW_API_KEY` - SiliconFlow API key
-- `NUXT_DEEPSEEK_API_KEY` - DeepSeek API key
-- `NUXT_BAILIAN_API_URL` - Alibaba Bailian API endpoint
-- `NUXT_BAILIAN_API_KEY` - Alibaba Bailian API key
-- `NUXT_MCP_SERVER_DIRECTORY` - Path to MCP server project
+必需的环境变量（将 `.env.example` 复制到 `.env`）：
+- `NUXT_SILICON_FLOW_API_URL` - SiliconFlow API 端点
+- `NUXT_SILICON_FLOW_API_KEY` - SiliconFlow API 密钥
+- `NUXT_DEEPSEEK_API_KEY` - DeepSeek API 密钥
+- `NUXT_BAILIAN_API_URL` - 阿里巴巴百炼 API 端点
+- `NUXT_BAILIAN_API_KEY` - 阿里巴巴百炼 API 密钥
+- `NUXT_MCP_SERVER_DIRECTORY` - MCP 服务器项目路径
 
-## Development Notes
+## 开发说明
 
-- Uses pnpm as the only package manager (enforced by preinstall script)
-- TypeScript with Nuxt's auto-imports enabled
-- ESLint integration via @nuxt/eslint
-- UnoCSS for styling with Nuxt integration
-- Element Plus X as the UI component library
-- No built-in testing framework currently configured
+- 仅使用 pnpm 作为包管理器（通过预安装脚本强制执行）
+- 启用 Nuxt 自动导入的 TypeScript
+- 通过 @nuxt/eslint 集成 ESLint
+- 使用 Nuxt 集成的 UnoCSS 进行样式设计
+- Element Plus X 作为 UI 组件库
+- 当前未配置内置测试框架
+
+### 目标
+
+整个项目的最终目标是实现一个通过自然语言描述业务需求后，能够根据需求自动生成符合要求的代码的 AI 代码生成系统。
+
+实现流程如下：
+1. 解析用户需求，通过多轮会话发现需求中需要澄清的店，最终生成用户需求说明文档
+2. 根据第一步的业务需求说明文档，进行业务建模，生成结构化的业务模型，包含实体、关系、业务流程、业务规则等信息
+3. 根据第二步的业务模型，生成对应的代码实现
+4. 代码生成完成后，进行代码质量检查和测试
+
+### agent说明
+
+所有的功能模块都需要有对应的 agent 来实现，agent 负责根据用户输入和上下文，调用相应的工具和模型，生成代码或回答问题，服务端的接口实际上是 agent 的调用。
+
+一般的，agent 的返回应当尽量通过 ai-sdk 的 streamText 函数来创建流式返回，这样可以避免服务端长时间await阻塞导致超时问题。
+
+所有的 agent 都需要在 `server/core/agents` 目录下实现，单独使用一个目录放置相关代码，并创建 README.md 文件进行说明，每个 agent 都是一个独立的模块，负责处理特定的功能。每个 agent 目录下的 `index.ts` 文件作为入口文件，合理拆分文件，避免单个文件中的内容过于聚集。
+

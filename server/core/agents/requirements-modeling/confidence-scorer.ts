@@ -5,7 +5,7 @@
  */
 
 import type {
-  ParsedRequirement,
+  BusinessModel,
   BusinessEntity,
   EntityRelationship,
   BusinessRule,

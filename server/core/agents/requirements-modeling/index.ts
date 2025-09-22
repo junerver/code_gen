@@ -2,9 +2,39 @@
 // noinspection ES6UnusedImports
 
 /**
- * @Description Requirements Parser Agent
+ * @Description Requirements Modeling Agent
  * @Author Claude Code
  * @Date 2025-09-19
+ *
+ * @overview
+ * 需求建模Agent负责将清晰、完整的需求文本转换为结构化的业务模型。
+ * 该Agent是需求工程的关键组件，将自然语言描述的需求精确解析为
+ * 标准格式的业务实体、关系、规则定义。
+ *
+ * @workflow
+ * 1. **业务域识别**：分析需求文本内容，确定业务领域上下文
+ * 2. **实体提取**：识别业务实体及其属性定义
+ * 3. **关系建模**：建立实体之间的业务关系
+ * 4. **规则定义**：提取业务规则和约束条件
+ * 5. **质量评估**：计算需求解析的置信度
+ * 6. **结构化输出**：生成标准化的需求模型
+ *
+ * @key_features
+ * - 智能实体识别与抽象
+ * - 精确的关系范式建模
+ * - 业务规则自动化提取
+ * - 领域知识库集成
+ * - 置信度评估与反馈
+ * - 严格的Schema验证
+ *
+ * @input_output
+ * - 输入：清晰、完整的需求文本描述
+ * - 输出：结构化的业务模型（实体/关系/规则）
+ * - 典型用途：收到需求澄清Agent的确认结果后调用
+ *
+ * @usage_context
+ * 通常在需求澄清Agent检测到用户已确认需求完整性后调用，
+ * 也可以直接用于已经明确的需求文本的建模处理。
  */
 
 import { generateObject, generateText } from 'ai';
@@ -18,9 +48,9 @@ import {
 } from './domain-knowledge';
 import { ConfidenceScorer } from './confidence-scorer';
 import {
-  ParsedRequirementSchema,
-  type ParsedRequirement,
-  type RequirementsParsingResult,
+  BusinessModelSchema,
+  type BusinessModel,
+  type RequirementsModelingResult,
 } from './types';
 
 /**
@@ -30,7 +60,7 @@ function generateUUID(): string {
   return crypto.randomUUID();
 }
 
-export interface ParseRequirementsOptions {
+export interface RequirementsModelingOptions {
   model?: AvailableModelNames;
   temperature?: number;
   maxRetries?: number;
@@ -42,15 +72,18 @@ export interface ParseRequirementsOptions {
   };
 }
 
-export class RequirementsParserAgent {
-  private model: AvailableModelNames;
+/**
+ * 需求建模Agent核心类
+ */
+export class RequirementsModelingAgent {
+  private aiModel: AvailableModelNames;
   private temperature: number;
   private maxRetries: number;
   private includeConfidenceAnalysis: boolean;
-  private context?: ParseRequirementsOptions['context'];
+  private context?: RequirementsModelingOptions['context'];
 
-  constructor(options: ParseRequirementsOptions = {}) {
-    this.model = options.model || DEFAULT_MODEL;
+  constructor(options: RequirementsModelingOptions = {}) {
+    this.aiModel = options.model || DEFAULT_MODEL;
     this.temperature = options.temperature || 0.3; // Lower temperature for more consistent parsing
     this.maxRetries = options.maxRetries || 3;
     this.includeConfidenceAnalysis =
@@ -59,9 +92,9 @@ export class RequirementsParserAgent {
   }
 
   /**
-   * Parse natural language requirements into structured format
+   * Model natural language requirements into structured business model
    */
-  async parse(requirementText: string): Promise<RequirementsParsingResult> {
+  async model(requirementText: string): Promise<RequirementsModelingResult> {
     try {
       // Detect domain if not provided
       const domain = this.context?.domain || matchDomain(requirementText);
@@ -87,7 +120,8 @@ export class RequirementsParserAgent {
       );
 
       // Validate the parsed result
-      const validation = await this.validateParsedRequirements(processedResult);
+      const validation =
+        await this.validateStructuredRequirements(processedResult);
       if (!validation.valid) {
         return {
           success: false,
@@ -149,7 +183,7 @@ export class RequirementsParserAgent {
     domainContext: any,
     domainEntities: string[],
     domainRules: string[]
-  ): Promise<ParsedRequirement> {
+  ): Promise<BusinessModel> {
     const systemPrompt = this.buildSystemPrompt(
       domain,
       domainContext,
@@ -161,15 +195,15 @@ export class RequirementsParserAgent {
     try {
       // Try with strict schema mode first
       const { object } = await generateObject({
-        model: llmProvider(this.model),
+        model: llmProvider(this.aiModel),
         temperature: this.temperature,
         system: systemPrompt,
         prompt: userPrompt,
-        schema: ParsedRequirementSchema,
+        schema: BusinessModelSchema,
         maxRetries: 3,
       });
 
-      return object as ParsedRequirement;
+      return object as BusinessModel;
     } catch (schemaError) {
       console.warn(
         'Schema validation failed, trying with text mode:',
@@ -178,7 +212,7 @@ export class RequirementsParserAgent {
 
       // Fallback: Generate as text then manually parse
       const { text: generatedText } = await generateText({
-        model: llmProvider(this.model),
+        model: llmProvider(this.aiModel),
         temperature: this.temperature,
         system: systemPrompt,
         prompt: `${userPrompt}\n\nGenerate ONLY the JSON response, no explanatory text.`,
@@ -189,7 +223,7 @@ export class RequirementsParserAgent {
         const jsonMatch = generatedText.match(/\{[\s\S]*\}/);
         if (jsonMatch) {
           const parsed = JSON.parse(jsonMatch[0]);
-          return parsed as ParsedRequirement;
+          return parsed as BusinessModel;
         } else {
           throw new Error('No JSON structure found in AI response');
         }
@@ -204,9 +238,9 @@ export class RequirementsParserAgent {
    * Post-process the requirement to fix any schema issues
    */
   private postProcessRequirement(
-    requirement: ParsedRequirement,
+    requirement: BusinessModel,
     originalText: string
-  ): ParsedRequirement {
+  ): BusinessModel {
     // Helper function to validate if a UUID follows proper v4 format
     const validateUUID = (uuid: string): boolean => {
       if (!uuid || typeof uuid !== 'string') return false;
@@ -680,14 +714,14 @@ Provide detailed analysis with high confidence threshold. All fields must be pro
   /**
    * Validate parsed requirements
    */
-  private async validateParsedRequirements(
-    parsed: ParsedRequirement
+  private async validateStructuredRequirements(
+    parsed: BusinessModel
   ): Promise<{ valid: boolean; errors: any[] }> {
     const errors: any[] = [];
 
     try {
       // Validate against schema
-      ParsedRequirementSchema.parse(parsed);
+      BusinessModelSchema.parse(parsed);
 
       // Additional business logic validation
       if (parsed.entities.length === 0) {
@@ -744,7 +778,7 @@ Provide detailed analysis with high confidence threshold. All fields must be pro
    * Generate additional clarification questions if needed
    */
   async generateAdditionalQuestions(
-    currentRequirement: ParsedRequirement,
+    currentRequirement: BusinessModel,
     context: string
   ): Promise<string[]> {
     const systemPrompt = `You are a requirements analysis expert. Generate specific, targeted clarification questions to improve requirements quality.`;
@@ -772,7 +806,7 @@ Generate questions that:
 Make questions specific, answerable, and focused on actionable information needed for implementation.`;
 
     const { text } = await generateText({
-      model: llmProvider(this.model),
+      model: llmProvider(this.aiModel),
       temperature: 0.5,
       system: systemPrompt,
       prompt: userPrompt,
@@ -780,13 +814,4 @@ Make questions specific, answerable, and focused on actionable information neede
 
     return text.split('\n').filter(line => line.trim() && line.includes('?'));
   }
-}
-
-// Convenience function for direct usage
-export async function parseRequirements(
-  text: string,
-  options?: ParseRequirementsOptions
-): Promise<RequirementsParsingResult> {
-  const parser = new RequirementsParserAgent(options);
-  return parser.parse(text);
 }

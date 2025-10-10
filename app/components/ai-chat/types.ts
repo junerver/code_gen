@@ -12,6 +12,8 @@ export interface AiConversation {
 export type ConversationMessageMap = Record<string, ChatMessage[]>;
 
 export interface AiChatAdapter {
+  loadConversations?: () => Promise<AiConversation[]>;
+  loadMessages?: (conversationId: string) => Promise<ChatMessage[]>;
   sendMessage: (payload: {
     conversation: AiConversation;
     prompt: string;
@@ -37,6 +39,7 @@ export interface AiChatPanelProps {
   placeholder?: string;
   initialConversations?: AiConversation[];
   initialMessages?: ConversationMessageMap;
+  autoLoadConversations?: boolean;
   avatars?: AiChatAvatars;
   adapter?: AiChatAdapter;
 }

@@ -1,7 +1,11 @@
 <template>
   <div class="ai-chat-panel">
     <div class="sidebar">
+      <div v-if="conversationsLoading" class="sidebar-loading">
+        <el-skeleton :rows="6" animated />
+      </div>
       <Conversations
+        v-else
         v-model:active="activeConversationId"
         :items="conversationItems"
         class="conversation-list"
@@ -42,7 +46,12 @@
               type="danger"
               size="small"
               :icon="Delete"
-              :disabled="!currentMessages.length || loading"
+              :disabled="
+                !currentMessages.length ||
+                loading ||
+                messagesLoading ||
+                conversationsLoading
+              "
               @click="handleClear"
             >
               清空对话
@@ -53,7 +62,16 @@
 
       <div class="chat-main">
         <div ref="messagesContainer" class="messages-container">
-          <el-empty v-if="!currentMessages.length" description="开始新的对话吧">
+          <el-skeleton
+            v-if="messagesLoading"
+            :rows="6"
+            animated
+            class="messages-skeleton"
+          />
+          <el-empty
+            v-else-if="!currentMessages.length"
+            description="开始新的对话吧"
+          >
             <template #image>
               <el-icon size="56" color="#409EFF">
                 <ChatDotRound />
@@ -91,7 +109,7 @@
       <div class="chat-footer">
         <Sender
           v-model="inputValue"
-          :disabled="loading"
+          :disabled="loading || messagesLoading || conversationsLoading"
           :placeholder="placeholder"
           class="sender"
           clearable
@@ -119,7 +137,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, nextTick, reactive, ref, watch } from 'vue';
+import { computed, nextTick, onMounted, reactive, ref, watch } from 'vue';
 import {
   BubbleList,
   Conversations,
@@ -180,6 +198,13 @@ const senderAutoSize = {
   minRows: 3,
   maxRows: 7,
 };
+const conversationsLoading = ref(false);
+const messagesLoading = ref(false);
+const pendingMessageRequest = ref<string | null>(null);
+const loadedConversations = new Set<string>();
+const shouldAutoLoadConversations = computed(
+  () => props.autoLoadConversations !== false
+);
 
 function createId(): string {
   if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) {
@@ -240,10 +265,49 @@ const currentMessages = computed<ChatMessage[]>(() => {
   return ensureMessages(id);
 });
 
+function applyConversations(
+  list: AiConversation[],
+  options: { resetLoaded?: boolean } = {}
+) {
+  const normalized = normalizeInitialConversations(list);
+  conversations.value = normalized;
+  if (options.resetLoaded) {
+    loadedConversations.clear();
+  }
+  const idSet = new Set(normalized.map(item => item.id));
+  for (const key of Object.keys(messageMap)) {
+    if (!idSet.has(key)) {
+      delete messageMap[key];
+    }
+  }
+  normalized.forEach(item => {
+    ensureMessages(item.id);
+  });
+  const hasActive = normalized.some(
+    item => item.id === activeConversationId.value
+  );
+  if (!hasActive && normalized.length > 0) {
+    activeConversationId.value = normalized[0].id;
+  }
+  if (list.length === 0 && normalized.length === 1) {
+    loadedConversations.add(normalized[0].id);
+  }
+}
+
+function applyInitialMessages(map: ConversationMessageMap | undefined) {
+  if (!map) return;
+  Object.keys(map).forEach(key => {
+    const messages = map[key] ?? [];
+    messageMap[key] = messages.map(message => ({ ...message }));
+    loadedConversations.add(key);
+  });
+}
+
 function requireActiveConversation(): AiConversation {
   const existing = currentConversation.value;
   if (existing) {
     ensureMessages(existing.id);
+    loadedConversations.add(existing.id);
     return existing;
   }
 
@@ -251,26 +315,84 @@ function requireActiveConversation(): AiConversation {
   conversations.value.push(fallback);
   activeConversationId.value = fallback.id;
   ensureMessages(fallback.id);
+  loadedConversations.add(fallback.id);
   return fallback;
+}
+
+async function refreshConversations() {
+  if (!props.adapter?.loadConversations || !shouldAutoLoadConversations.value) {
+    const base = props.initialConversations ?? conversations.value;
+    applyConversations(base.map(item => ({ ...item })));
+    if (!props.adapter?.loadMessages) {
+      applyInitialMessages(props.initialMessages);
+    }
+    return;
+  }
+
+  conversationsLoading.value = true;
+  try {
+    const fetched = await props.adapter.loadConversations();
+    const copied = (fetched ?? []).map(item => ({ ...item }));
+    applyConversations(copied, { resetLoaded: true });
+  } catch (error) {
+    errorMessage.value = (error as Error).message ?? '会话加载失败，请稍后重试';
+  } finally {
+    conversationsLoading.value = false;
+  }
+}
+
+async function loadMessagesForConversation(
+  conversationId: string,
+  options: { force?: boolean } = {}
+) {
+  if (!conversationId) return;
+  if (!options.force && loadedConversations.has(conversationId)) {
+    return;
+  }
+
+  const loader = props.adapter?.loadMessages;
+  if (!loader) {
+    if (props.initialMessages?.[conversationId]) {
+      const messages = props.initialMessages[conversationId] ?? [];
+      messageMap[conversationId] = messages.map(message => ({ ...message }));
+    }
+    ensureMessages(conversationId);
+    loadedConversations.add(conversationId);
+    return;
+  }
+
+  pendingMessageRequest.value = conversationId;
+  messagesLoading.value = true;
+  try {
+    const response = await loader(conversationId);
+    if (pendingMessageRequest.value !== conversationId) return;
+    messageMap[conversationId] = (response ?? []).map(message => ({
+      ...message,
+    }));
+    loadedConversations.add(conversationId);
+  } catch (error) {
+    if (pendingMessageRequest.value === conversationId) {
+      errorMessage.value =
+        (error as Error).message ?? '消息加载失败，请稍后重试';
+    }
+  } finally {
+    if (pendingMessageRequest.value === conversationId) {
+      messagesLoading.value = false;
+      pendingMessageRequest.value = null;
+    }
+  }
 }
 
 watch(
   () => props.initialConversations,
   newVal => {
-    if (!newVal || !newVal.length) return;
-    conversations.value = normalizeInitialConversations(
-      newVal.map(item => ({ ...item }))
-    );
-    for (const item of conversations.value) {
-      ensureMessages(item.id);
+    if (shouldAutoLoadConversations.value && props.adapter?.loadConversations) {
+      return;
     }
-    if (
-      !conversations.value.find(item => item.id === activeConversationId.value)
-    ) {
-      const first = conversations.value[0];
-      if (first) {
-        activeConversationId.value = first.id;
-      }
+    const list = (newVal ?? []).map(item => ({ ...item }));
+    applyConversations(list);
+    if (!props.adapter?.loadMessages) {
+      applyInitialMessages(props.initialMessages);
     }
   }
 );
@@ -278,11 +400,8 @@ watch(
 watch(
   () => props.initialMessages,
   newVal => {
-    if (!newVal) return;
-    for (const key of Object.keys(newVal)) {
-      const messages = newVal[key] ?? [];
-      messageMap[key] = messages.map(message => ({ ...message }));
-    }
+    if (props.adapter?.loadMessages) return;
+    applyInitialMessages(newVal);
     ensureMessages(activeConversationId.value);
   }
 );
@@ -298,6 +417,18 @@ watch(
   },
   { flush: 'post' }
 );
+
+watch(activeConversationId, id => {
+  if (!id) return;
+  void loadMessagesForConversation(id);
+});
+
+onMounted(async () => {
+  await refreshConversations();
+  await loadMessagesForConversation(activeConversationId.value, {
+    force: true,
+  });
+});
 
 function buildInitialConversations(): AiConversation[] {
   if (props.initialConversations?.length) {
@@ -379,7 +510,7 @@ function updateConversationMeta(conversation: AiConversation, text: string) {
 }
 
 async function handleSend(message?: string) {
-  if (loading.value) return;
+  if (loading.value || messagesLoading.value) return;
   const content = (message ?? inputValue.value).trim();
   if (!content) return;
 
@@ -417,7 +548,8 @@ async function handleSend(message?: string) {
 }
 
 async function handleRegenerate(message: ChatMessage) {
-  if (!adapter.value.regenerate || loading.value) return;
+  if (!adapter.value.regenerate || loading.value || messagesLoading.value)
+    return;
   const conversation = requireActiveConversation();
   const messages = ensureMessages(conversation.id);
   const index = messages.findIndex(item => item.id === message.id);
@@ -445,7 +577,7 @@ async function handleRegenerate(message: ChatMessage) {
 }
 
 async function handleClear() {
-  if (loading.value) return;
+  if (loading.value || messagesLoading.value) return;
   const conversation = requireActiveConversation();
   const messages = ensureMessages(conversation.id);
   messages.splice(0, messages.length);
@@ -467,6 +599,7 @@ function createConversation() {
   conversations.value.unshift(conversation);
   activeConversationId.value = conversation.id;
   ensureMessages(conversation.id);
+  loadedConversations.add(conversation.id);
   emit('conversation-create', conversation);
   ElMessage.success('已创建新对话');
 }
@@ -478,6 +611,7 @@ function handleConversationChange(item: ConversationItem<AiConversation>) {
   if (match) {
     activeConversationId.value = match.id;
     ensureMessages(match.id);
+    void loadMessagesForConversation(match.id);
     emit('conversation-change', match);
   }
 }
@@ -532,6 +666,10 @@ function createFallbackAdapter(): AiChatAdapter {
   background-color: rgba(255, 255, 255, 0.96);
   display: flex;
   flex-direction: column;
+}
+
+.sidebar-loading {
+  padding: 16px;
 }
 
 .conversation-list {
@@ -613,6 +751,10 @@ function createFallbackAdapter(): AiChatAdapter {
   gap: 16px;
   overflow-y: auto;
   background-color: rgba(255, 255, 255, 0.96);
+}
+
+.messages-skeleton {
+  padding: 12px 0;
 }
 
 .chat-footer {

@@ -18,7 +18,11 @@
 import { reactive, ref } from 'vue';
 import { ElMessage } from 'element-plus';
 import { AiChatPanel } from '~/components/ai-chat';
-import type { AiChatAdapter, AiConversation } from '~/components/ai-chat/types';
+import type {
+  AiChatAdapter,
+  AiChatStreamMeta,
+  AiConversation,
+} from '~/components/ai-chat/types';
 import type { ChatMessage } from '~/types/chat';
 import { DEFAULT_MODEL } from '#shared/types/model';
 
@@ -71,37 +75,80 @@ const adapter: AiChatAdapter = {
     return list.map(message => ({ ...message }));
   },
   // 模拟发送消息，返回助手回复；history 参数包含当前会话上下文
-  async sendMessage({ conversation, prompt, history }) {
-    await delay(420);
-    const response = createMockMessage(
-      'assistant',
-      `这里是模拟响应：${prompt}。可以在外部替换成真实接口。`
-    );
-    const historySnapshot = history.map(item => ({ ...item }));
-    mockMessages[conversation.id] = [...historySnapshot, { ...response }];
-    touchConversationMeta(conversation.id, response.content ?? '');
-    return response;
+  async sendMessage({ conversation, prompt, history, onMessage }) {
+    await delay(240);
+    const base = createMockMessage('assistant', '');
+    const finalText = '\u6a21\u62df\u54cd\u5e94\uff1a' + prompt;
+
+    // 立即返回基础消息对象，实际内容通过流式更新
+    if (onMessage) {
+      // 启动流式响应并在完成时更新本地数据
+      streamMockAssistant(finalText, base, onMessage)
+        .then(result => {
+          const historySnapshot = history.map(item => ({ ...item }));
+          mockMessages[conversation.id] = [...historySnapshot, { ...result }];
+          touchConversationMeta(conversation.id, result.content ?? '');
+        })
+        .catch(error => {
+          console.error('Stream error:', error);
+        });
+      return base;
+    } else {
+      // 如果没有流式处理器，直接返回完整响应
+      const streamed = await streamMockAssistant(finalText, base);
+      const historySnapshot = history.map(item => ({ ...item }));
+      mockMessages[conversation.id] = [...historySnapshot, { ...streamed }];
+      touchConversationMeta(conversation.id, streamed.content ?? '');
+      return streamed;
+    }
   },
   // 模拟重新生成指定消息
-  async regenerate({ conversation, message, history }) {
-    await delay(360);
-    const regenerated = createMockMessage(
-      'assistant',
-      `重新生成的回答：我们可以进一步优化「${message.content}」。`
-    );
-    regenerated.id = message.id;
-    const base = (mockMessages[conversation.id] ?? history).map(item => ({
-      ...item,
-    }));
-    const index = base.findIndex(item => item.id === message.id);
-    if (index !== -1) {
-      base.splice(index, 1, { ...regenerated });
+  async regenerate({ conversation, message, history, onMessage }) {
+    await delay(240);
+    const base = createMockMessage('assistant', '');
+    base.id = message.id;
+    const finalText =
+      '\u91cd\u65b0\u751f\u6210\u7ed3\u679c\uff1a' + (message.content ?? '');
+
+    // 立即返回基础消息对象，实际内容通过流式更新
+    if (onMessage) {
+      // 启动流式响应并在完成时更新本地数据
+      streamMockAssistant(finalText, base, onMessage)
+        .then(result => {
+          const source = (mockMessages[conversation.id] ?? history).map(
+            item => ({
+              ...item,
+            })
+          );
+          const index = source.findIndex(item => item.id === message.id);
+          if (index !== -1) {
+            source.splice(index, 1, { ...result });
+          } else {
+            source.push({ ...result });
+          }
+          mockMessages[conversation.id] = source;
+          touchConversationMeta(conversation.id, result.content ?? '');
+        })
+        .catch(error => {
+          console.error('Stream error:', error);
+        });
+      return base;
     } else {
-      base.push({ ...regenerated });
+      // 如果没有流式处理器，直接返回完整响应
+      const streamed = await streamMockAssistant(finalText, base);
+      const source = (mockMessages[conversation.id] ?? history).map(item => ({
+        ...item,
+      }));
+      const index = source.findIndex(item => item.id === message.id);
+      if (index !== -1) {
+        source.splice(index, 1, { ...streamed });
+      } else {
+        source.push({ ...streamed });
+      }
+      mockMessages[conversation.id] = source;
+      touchConversationMeta(conversation.id, streamed.content ?? '');
+      return streamed;
     }
-    mockMessages[conversation.id] = base;
-    touchConversationMeta(conversation.id, regenerated.content ?? '');
-    return regenerated;
   },
   // 模拟清空会话
   async clearConversation(conversation) {
@@ -110,6 +157,40 @@ const adapter: AiChatAdapter = {
     touchConversationMeta(conversation.id, '');
   },
 };
+
+async function streamMockAssistant(
+  text: string,
+  base: ChatMessage,
+  onMessage?: (message: ChatMessage, meta: AiChatStreamMeta) => void
+): Promise<ChatMessage> {
+  if (onMessage) {
+    console.log('🚀 [Mock] 开始流式响应:', text);
+    // 如果有流式处理器，启动真正的流式响应
+    onMessage({ ...base }, { phase: 'start' });
+    let acc = '';
+    for (const char of Array.from(text)) {
+      await delay(80); // 增加延迟让流式效果更明显
+      acc += char;
+      // 添加 typing 状态，让组件显示正在输入的效果
+      const streamingMessage = {
+        ...base,
+        content: acc,
+        typing: true,
+      };
+      onMessage(streamingMessage, { phase: 'update' });
+      console.log('🔤 [Mock] 发送字符:', char, '当前内容:', acc);
+    }
+    const result = { ...base, content: acc, typing: false };
+    onMessage(result, { phase: 'complete' });
+    console.log('✅ [Mock] 流式响应完成');
+    return result;
+  } else {
+    // 如果没有流式处理器，直接返回完整响应
+    console.log('📄 [Mock] 直接返回完整响应');
+    await delay(60 * text.length); // 模拟相同的时间延迟
+    return { ...base, content: text };
+  }
+}
 
 function createMockMessage(
   role: ChatMessage['role'],
@@ -128,6 +209,8 @@ function createMockMessage(
     avatarSize: '32px',
     variant: role === 'user' ? 'outlined' : 'filled',
     maxWidth: '880px',
+    typing: false,
+    isMarkdown: role === 'assistant',
   };
 }
 

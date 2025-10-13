@@ -11,6 +11,17 @@ export interface AiConversation {
 
 export type ConversationMessageMap = Record<string, ChatMessage[]>;
 
+export type AiChatStreamPhase = 'start' | 'update' | 'complete';
+
+export interface AiChatStreamMeta {
+  phase: AiChatStreamPhase;
+}
+
+export type AiChatStreamHandler = (
+  message: ChatMessage,
+  meta: AiChatStreamMeta
+) => void;
+
 export interface AiChatAdapter {
   loadConversations?: () => Promise<AiConversation[]>;
   loadMessages?: (conversationId: string) => Promise<ChatMessage[]>;
@@ -19,12 +30,14 @@ export interface AiChatAdapter {
     prompt: string;
     model: string;
     history: ChatMessage[];
+    onMessage?: AiChatStreamHandler;
   }) => Promise<ChatMessage>;
   regenerate?: (payload: {
     conversation: AiConversation;
     message: ChatMessage;
     model: string;
     history: ChatMessage[];
+    onMessage?: AiChatStreamHandler;
   }) => Promise<ChatMessage>;
   clearConversation?: (conversation: AiConversation) => Promise<void>;
 }

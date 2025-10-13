@@ -15,4 +15,8 @@ export type ChatMessage = BubbleProps &
     reasoningContent?: string;
     // 推理状态
     reasoningStatus?: 'start' | 'thinking' | 'end' | 'error';
+    // 是否正在输入（流式响应状态）
+    typing?: boolean;
+    // 是否为 Markdown 格式
+    isMarkdown?: boolean;
   };

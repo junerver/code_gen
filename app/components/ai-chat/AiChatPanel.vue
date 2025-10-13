@@ -80,16 +80,29 @@
           </el-empty>
           <BubbleList v-else max-height="100%" :list="currentMessages">
             <template #content="{ item }">
-              <XMarkdown
-                v-if="item.role === 'assistant'"
-                :markdown="String(item.content ?? '')"
-                class="bubble-markdown"
-              />
+              <div v-if="item.role === 'assistant'">
+                <!-- 流式响应时显示 typing 状态 -->
+                <div v-if="item.typing" class="typing-indicator">
+                  <span class="typing-text">{{ item.content }}</span>
+                  <span class="typing-dots">
+                    <span>.</span>
+                    <span>.</span>
+                    <span>.</span>
+                  </span>
+                </div>
+                <XMarkdown
+                  v-else
+                  :markdown="String(item.content ?? '')"
+                  class="bubble-markdown"
+                />
+              </div>
               <p v-else class="bubble-text">{{ item.content }}</p>
             </template>
             <template #footer="{ item }">
               <el-tooltip
-                v-if="canRegenerate && item.role === 'assistant'"
+                v-if="
+                  canRegenerate && item.role === 'assistant' && !item.typing
+                "
                 content="重新生成"
                 placement="bottom"
               >
@@ -154,6 +167,7 @@ import type {
   AiChatAdapter,
   AiChatPanelProps,
   AiConversation,
+  AiChatStreamMeta,
   ConversationMessageMap,
 } from './types';
 import type { BubbleProps } from 'vue-element-plus-x/types/Bubble';
@@ -262,7 +276,9 @@ const currentConversation = computed<AiConversation | null>(() => {
 
 const currentMessages = computed<ChatMessage[]>(() => {
   const id = activeConversationId.value;
-  return ensureMessages(id);
+  const messages = ensureMessages(id);
+  // 强制更新计算属性，确保响应式更新
+  return messages.map(msg => ({ ...msg }));
 });
 
 function applyConversations(
@@ -483,6 +499,8 @@ function createMessage(payload: {
     avatarSize: '32px',
     variant: isUser ? 'outlined' : 'filled',
     maxWidth: '880px',
+    typing: false,
+    isMarkdown: !isUser,
     ...payload.overrides,
   };
 }
@@ -501,6 +519,9 @@ function normalizeAssistantMessage(message: ChatMessage): ChatMessage {
     avatar: avatars.value.assistant,
     avatarSize: '32px',
     variant: 'filled',
+    isMarkdown: true,
+    // 保持流式更新的状态
+    typing: message.typing ?? false,
   };
 }
 
@@ -524,21 +545,68 @@ async function handleSend(message?: string) {
   loading.value = true;
   errorMessage.value = undefined;
 
+  let responseMessage: ChatMessage | null = null;
+  const applyStreamUpdate = (incoming: ChatMessage, meta: AiChatStreamMeta) => {
+    const normalized = normalizeAssistantMessage(incoming);
+    if (!responseMessage) {
+      responseMessage = normalized;
+      targetMessages.push(responseMessage);
+      console.log(
+        '📝 [Stream] 创建新消息:',
+        normalized.content?.substring(0, 50),
+        'typing:',
+        normalized.typing
+      );
+    } else {
+      // 确保响应式更新：替换整个对象而不是使用 Object.assign
+      const index = targetMessages.findIndex(
+        msg => msg.id === responseMessage?.id
+      );
+      if (index !== -1) {
+        targetMessages[index] = { ...responseMessage, ...normalized };
+        console.log(
+          '📝 [Stream] 更新消息:',
+          normalized.content?.substring(0, 50),
+          'typing:',
+          normalized.typing
+        );
+      }
+    }
+    updateConversationMeta(conversation, responseMessage.content ?? '');
+    void nextTick(scrollToBottom);
+
+    // 如果流式响应完成，发送事件
+    if (meta.phase === 'complete' && responseMessage) {
+      console.log('📝 [Stream] 流式响应完成');
+      emit('message-send', {
+        conversation,
+        request: requestMessage,
+        response: responseMessage,
+      });
+    }
+  };
+
   try {
     const responseRaw = await adapter.value.sendMessage({
       conversation,
       prompt: content,
       model: modelValue.value,
       history: [...targetMessages],
+      onMessage: applyStreamUpdate,
     });
-    const response = normalizeAssistantMessage(responseRaw);
-    targetMessages.push(response);
-    updateConversationMeta(conversation, response.content ?? '');
-    emit('message-send', {
-      conversation,
-      request: requestMessage,
-      response,
-    });
+
+    // 如果 adapter 没有使用流式处理，手动处理返回的消息
+    if (!responseMessage) {
+      const finalResponse = normalizeAssistantMessage(responseRaw);
+      responseMessage = finalResponse;
+      targetMessages.push(responseMessage);
+      updateConversationMeta(conversation, finalResponse.content ?? '');
+      emit('message-send', {
+        conversation,
+        request: requestMessage,
+        response: finalResponse,
+      });
+    }
   } catch (error) {
     errorMessage.value = (error as Error).message ?? '发送失败，请稍后再试';
   } finally {
@@ -554,9 +622,22 @@ async function handleRegenerate(message: ChatMessage) {
   const messages = ensureMessages(conversation.id);
   const index = messages.findIndex(item => item.id === message.id);
   if (index === -1) return;
+  const targetMessage = messages[index];
+  if (!targetMessage) return;
 
   loading.value = true;
   errorMessage.value = undefined;
+
+  const applyStreamUpdate = (incoming: ChatMessage, meta: AiChatStreamMeta) => {
+    const normalized = normalizeAssistantMessage(incoming);
+    // 确保响应式更新：替换整个对象而不是使用 Object.assign
+    const index = messages.findIndex(msg => msg.id === targetMessage.id);
+    if (index !== -1) {
+      messages[index] = { ...targetMessage, ...normalized };
+    }
+    updateConversationMeta(conversation, messages[index].content ?? '');
+    void nextTick(scrollToBottom);
+  };
 
   try {
     const regeneratedRaw = await adapter.value.regenerate({
@@ -564,10 +645,18 @@ async function handleRegenerate(message: ChatMessage) {
       message,
       model: modelValue.value,
       history: [...messages],
+      onMessage: applyStreamUpdate,
     });
-    const regenerated = normalizeAssistantMessage(regeneratedRaw);
-    messages.splice(index, 1, regenerated);
-    updateConversationMeta(conversation, regenerated.content ?? '');
+
+    // 如果 adapter 没有使用流式处理，手动处理返回的消息
+    if (!targetMessage.content) {
+      const regenerated = normalizeAssistantMessage(regeneratedRaw);
+      const index = messages.findIndex(msg => msg.id === targetMessage.id);
+      if (index !== -1) {
+        messages[index] = { ...targetMessage, ...regenerated };
+      }
+      updateConversationMeta(conversation, messages[index].content ?? '');
+    }
   } catch (error) {
     errorMessage.value = (error as Error).message ?? '重新生成失败，请稍后再试';
   } finally {
@@ -628,20 +717,70 @@ function delay(duration: number) {
   });
 }
 
+async function streamMockResponse(
+  text: string,
+  base: ChatMessage,
+  onMessage?: (message: ChatMessage, meta: AiChatStreamMeta) => void
+): Promise<ChatMessage> {
+  onMessage?.({ ...base }, { phase: 'start' });
+  let acc = '';
+  for (const char of Array.from(text)) {
+    await delay(60);
+    acc += char;
+    onMessage?.({ ...base, content: acc }, { phase: 'update' });
+  }
+  const result = { ...base, content: acc };
+  onMessage?.(result, { phase: 'complete' });
+  return result;
+}
+
 function createFallbackAdapter(): AiChatAdapter {
   return {
-    async sendMessage({ prompt }) {
-      await delay(400);
+    async sendMessage({ prompt, onMessage }) {
+      await delay(160);
+      const finalText = `模拟回复：${prompt}`;
+      const base = createMessage({
+        role: 'assistant',
+        content: '',
+      });
+
+      if (onMessage) {
+        // 启动流式响应但不等待完成
+        streamMockResponse(finalText, base, onMessage).catch(error => {
+          console.error('Stream error:', error);
+        });
+        // 立即返回基础消息对象，实际内容通过流式更新
+        return base;
+      }
+
+      // 如果没有流式处理器，直接返回完整响应
       return createMessage({
         role: 'assistant',
-        content: `模拟回复：${prompt}`,
+        content: finalText,
       });
     },
-    async regenerate({ message }) {
-      await delay(400);
+    async regenerate({ message, onMessage }) {
+      await delay(160);
+      const finalText = `重新生成结果：${message.content}`;
+      const base = createMessage({
+        role: 'assistant',
+        content: '',
+      });
+      base.id = message.id ?? base.id;
+
+      if (onMessage) {
+        // 启动流式响应但不等待完成
+        streamMockResponse(finalText, base, onMessage).catch(error => {
+          console.error('Stream error:', error);
+        });
+        // 立即返回基础消息对象，实际内容通过流式更新
+        return base;
+      }
+
+      // 如果没有流式处理器，直接返回完整响应
       return createMessage({
         role: 'assistant',
-        content: `重新生成结果：${message.content}`,
+        content: finalText,
       });
     },
   };
@@ -787,5 +926,52 @@ function createFallbackAdapter(): AiChatAdapter {
   left: 50%;
   transform: translateX(-50%);
   width: 380px;
+}
+
+.typing-indicator {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.typing-text {
+  flex: 1;
+}
+
+.typing-dots {
+  display: inline-flex;
+  gap: 2px;
+  align-items: baseline;
+}
+
+.typing-dots span {
+  animation: typing 1.4s infinite;
+  font-size: 16px;
+  line-height: 1;
+}
+
+.typing-dots span:nth-child(1) {
+  animation-delay: 0s;
+}
+
+.typing-dots span:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.typing-dots span:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+@keyframes typing {
+  0%,
+  60%,
+  100% {
+    opacity: 0.3;
+    transform: translateY(0);
+  }
+  30% {
+    opacity: 1;
+    transform: translateY(-2px);
+  }
 }
 </style>

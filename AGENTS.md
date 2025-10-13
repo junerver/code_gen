@@ -30,3 +30,7 @@
 - Recent history favors the `wip: 描述` style; keep the `wip:` prefix or adopt a clearer `type: summary` convention consistently across the team.
 - Commits should remain focused on a single change set; include translated context when touching bilingual resources.
 - Pull requests should describe the motivation, list key commands run (`pnpm build`, manual QA), link tracking issues, and add screenshots or logs for UI-facing changes.
+
+## Others
+
+Always respond in Chinese-simplified

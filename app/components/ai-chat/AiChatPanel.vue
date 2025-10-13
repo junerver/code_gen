@@ -906,6 +906,8 @@ function createFallbackAdapter(): AiChatAdapter {
   align-items: center;
   justify-content: space-between;
   padding: 16px;
+  height: 68px;
+  box-sizing: border-box;
   border-bottom: 1px solid var(--el-border-color-light);
 }
 

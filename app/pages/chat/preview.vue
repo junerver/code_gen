@@ -62,19 +62,129 @@ const mockMessages = reactive<Record<string, ChatMessage[]>>({
   ],
 });
 
+/**
+ * 真实接口适配器示例
+ *
+ * 这个适配器展示了如何对接真实的 AI 接口，请参考以下实现模式：
+ *
+ * ## 关键实现要点：
+ *
+ * 1. **流式响应处理**：当提供了 onMessage 回调时，必须实现真正的流式响应
+ * 2. **立即返回策略**：适配器应该立即返回基础消息对象，不等待流式完成
+ * 3. **错误处理**：正确处理网络错误和流式错误
+ * 4. **数据持久化**：在流式完成后更新本地数据存储
+ *
+ * ## 对接真实接口的模板：
+ *
+ * ```typescript
+ * const realAdapter: AiChatAdapter = {
+ *   async loadConversations() {
+ *     // 从后端 API 加载会话列表
+ *     const response = await fetch('/api/conversations');
+ *     return await response.json();
+ *   },
+ *
+ *   async loadMessages(conversationId) {
+ *     // 从后端 API 加载指定会话的消息
+ *     const response = await fetch(`/api/conversations/${conversationId}/messages`);
+ *     return await response.json();
+ *   },
+ *
+ *   async sendMessage({ conversation, prompt, model, history, onMessage }) {
+ *     // 调用真实的 AI API
+ *     const response = await fetch('/api/chat', {
+ *       method: 'POST',
+ *       headers: { 'Content-Type': 'application/json' },
+ *       body: JSON.stringify({
+ *         conversationId: conversation.id,
+ *         prompt,
+ *         model,
+ *         history,
+ *         stream: !!onMessage // 告诉后端是否需要流式响应
+ *       })
+ *     });
+ *
+ *     if (onMessage) {
+ *       // 处理流式响应
+ *       const reader = response.body?.getReader();
+ *       const decoder = new TextDecoder();
+ *       let accumulatedContent = '';
+ *
+ *       // 创建基础消息对象
+ *       const baseMessage = createMockMessage('assistant', '');
+ *
+ *       while (true) {
+ *         const { done, value } = await reader.read();
+ *         if (done) break;
+ *
+ *         const chunk = decoder.decode(value);
+ *         accumulatedContent += chunk;
+ *
+ *         // 调用流式更新回调
+ *         onMessage({
+ *           ...baseMessage,
+ *           content: accumulatedContent,
+ *           typing: true
+ *         }, { phase: 'update' });
+ *       }
+ *
+ *       // 流式完成
+ *       onMessage({
+ *         ...baseMessage,
+ *         content: accumulatedContent,
+ *         typing: false
+ *       }, { phase: 'complete' });
+ *
+ *       return baseMessage;
+ *     } else {
+ *       // 非流式响应
+ *       return await response.json();
+ *     }
+ *   }
+ * };
+ * ```
+ */
 const adapter: AiChatAdapter = {
-  // 模拟从服务端加载会话列表
+  /**
+   * 加载会话列表
+   *
+   * 真实实现：从后端 API 或数据库加载用户的会话列表
+   */
   async loadConversations() {
     await delay(480);
     return mockConversations.map(item => ({ ...item }));
   },
-  // 模拟按需拉取单个会话的历史消息
+
+  /**
+   * 加载指定会话的消息历史
+   *
+   * 真实实现：从后端 API 加载指定会话的所有消息
+   *
+   * @param conversationId 会话ID
+   * @returns Promise<ChatMessage[]> 消息列表
+   */
   async loadMessages(conversationId) {
     await delay(360);
     const list = mockMessages[conversationId] ?? [];
     return list.map(message => ({ ...message }));
   },
-  // 模拟发送消息，返回助手回复；history 参数包含当前会话上下文
+
+  /**
+   * 发送消息并获取助手回复
+   *
+   * 这是最核心的方法，展示了流式响应的正确实现模式：
+   * 1. 创建基础消息对象并立即返回
+   * 2. 启动流式响应处理（不等待）
+   * 3. 流式完成后更新本地数据存储
+   *
+   * @param payload 发送参数
+   * @param payload.conversation 会话信息
+   * @param payload.prompt 用户输入内容
+   * @param payload.model 使用的模型
+   * @param payload.history 历史消息
+   * @param payload.onMessage 流式更新回调（关键！）
+   * @returns Promise<ChatMessage> 助手回复消息
+   */
   async sendMessage({ conversation, prompt, history, onMessage }) {
     await delay(240);
     const base = createMockMessage('assistant', '');
@@ -102,7 +212,20 @@ const adapter: AiChatAdapter = {
       return streamed;
     }
   },
-  // 模拟重新生成指定消息
+
+  /**
+   * 重新生成指定消息的回复
+   *
+   * 实现逻辑与 sendMessage 类似，但是更新指定 ID 的消息
+   *
+   * @param payload 重新生成参数
+   * @param payload.conversation 会话信息
+   * @param payload.message 要重新生成的消息
+   * @param payload.model 使用的模型
+   * @param payload.history 历史消息
+   * @param payload.onMessage 流式更新回调
+   * @returns Promise<ChatMessage> 重新生成的消息
+   */
   async regenerate({ conversation, message, history, onMessage }) {
     await delay(240);
     const base = createMockMessage('assistant', '');
@@ -150,7 +273,14 @@ const adapter: AiChatAdapter = {
       return streamed;
     }
   },
-  // 模拟清空会话
+
+  /**
+   * 清空指定会话的消息
+   *
+   * 真实实现：调用后端 API 清空会话数据
+   *
+   * @param conversation 要清空的会话
+   */
   async clearConversation(conversation) {
     await delay(240);
     mockMessages[conversation.id] = [];
@@ -158,6 +288,21 @@ const adapter: AiChatAdapter = {
   },
 };
 
+/**
+ * 模拟流式助手响应
+ *
+ * 这个函数演示了如何实现真正的流式响应：
+ * 1. 逐字符发送内容，模拟真实的 AI 响应过程
+ * 2. 在流式期间设置 typing 状态，UI 显示输入指示器
+ * 3. 流式完成后清除 typing 状态
+ *
+ * 真实接口实现时，应该替换为实际的流式数据读取逻辑
+ *
+ * @param text 要发送的完整文本
+ * @param base 基础消息对象
+ * @param onMessage 流式更新回调
+ * @returns Promise<ChatMessage> 最终的完整消息
+ */
 async function streamMockAssistant(
   text: string,
   base: ChatMessage,
@@ -165,27 +310,37 @@ async function streamMockAssistant(
 ): Promise<ChatMessage> {
   if (onMessage) {
     console.log('🚀 [Mock] 开始流式响应:', text);
-    // 如果有流式处理器，启动真正的流式响应
+
+    // 流式响应开始：发送空消息，标记为 typing 状态
     onMessage({ ...base }, { phase: 'start' });
+
     let acc = '';
+
+    // 逐字符流式发送内容
     for (const char of Array.from(text)) {
       await delay(80); // 增加延迟让流式效果更明显
       acc += char;
-      // 添加 typing 状态，让组件显示正在输入的效果
+
+      // 创建流式消息对象，保持 typing 状态
       const streamingMessage = {
         ...base,
         content: acc,
         typing: true,
       };
+
+      // 调用流式更新回调
       onMessage(streamingMessage, { phase: 'update' });
       console.log('🔤 [Mock] 发送字符:', char, '当前内容:', acc);
     }
+
+    // 流式响应完成：清除 typing 状态
     const result = { ...base, content: acc, typing: false };
     onMessage(result, { phase: 'complete' });
     console.log('✅ [Mock] 流式响应完成');
+
     return result;
   } else {
-    // 如果没有流式处理器，直接返回完整响应
+    // 如果没有流式处理器，直接返回完整响应（向后兼容）
     console.log('📄 [Mock] 直接返回完整响应');
     await delay(60 * text.length); // 模拟相同的时间延迟
     return { ...base, content: text };

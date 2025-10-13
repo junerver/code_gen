@@ -530,25 +530,62 @@ function updateConversationMeta(conversation: AiConversation, text: string) {
   conversation.updatedAt = new Date().toISOString();
 }
 
+/**
+ * 处理用户发送消息
+ *
+ * 这个方法是整个聊天流程的核心入口，负责：
+ * 1. 验证输入和状态
+ * 2. 创建用户消息并添加到消息列表
+ * 3. 调用适配器发送消息并处理流式响应
+ * 4. 更新UI状态和会话元数据
+ *
+ * @param message 可选的消息内容，如果不提供则使用输入框的值
+ */
 async function handleSend(message?: string) {
+  // 状态检查：防止重复请求和在加载过程中发送新消息
   if (loading.value || messagesLoading.value) return;
+
+  // 获取并验证消息内容
   const content = (message ?? inputValue.value).trim();
   if (!content) return;
 
+  // 获取当前活跃会话并确保消息列表存在
   const conversation = requireActiveConversation();
   const targetMessages = ensureMessages(conversation.id);
+
+  // 创建并添加用户消息
   const requestMessage = createMessage({ role: 'user', content });
   targetMessages.push(requestMessage);
   updateConversationMeta(conversation, content);
 
+  // 重置UI状态
   inputValue.value = '';
   loading.value = true;
   errorMessage.value = undefined;
 
   let responseMessage: ChatMessage | null = null;
+
+  /**
+   * 流式更新处理器
+   *
+   * 这个函数会被适配器在流式响应过程中多次调用：
+   * - phase 'start': 流式响应开始
+   * - phase 'update': 内容更新（可能多次调用）
+   * - phase 'complete': 流式响应结束
+   *
+   * 关键点：
+   * 1. 使用对象替换而非属性更新来确保Vue响应式
+   * 2. 正确处理首次创建和后续更新的不同逻辑
+   * 3. 维护responseMessage引用以便后续更新
+   *
+   * @param incoming 来自适配器的流式消息数据
+   * @param meta 流式响应元数据，包含当前阶段信息
+   */
   const applyStreamUpdate = (incoming: ChatMessage, meta: AiChatStreamMeta) => {
     const normalized = normalizeAssistantMessage(incoming);
+
     if (!responseMessage) {
+      // 首次创建助手消息
       responseMessage = normalized;
       targetMessages.push(responseMessage);
       console.log(
@@ -558,7 +595,7 @@ async function handleSend(message?: string) {
         normalized.typing
       );
     } else {
-      // 确保响应式更新：替换整个对象而不是使用 Object.assign
+      // 更新现有消息内容（关键：必须替换整个对象以触发Vue响应式）
       const index = targetMessages.findIndex(
         msg => msg.id === responseMessage?.id
       );
@@ -572,10 +609,12 @@ async function handleSend(message?: string) {
         );
       }
     }
+
+    // 更新会话元数据和UI状态
     updateConversationMeta(conversation, responseMessage.content ?? '');
     void nextTick(scrollToBottom);
 
-    // 如果流式响应完成，发送事件
+    // 流式响应完成时的处理
     if (meta.phase === 'complete' && responseMessage) {
       console.log('📝 [Stream] 流式响应完成');
       emit('message-send', {
@@ -587,15 +626,17 @@ async function handleSend(message?: string) {
   };
 
   try {
+    // 调用适配器发送消息
     const responseRaw = await adapter.value.sendMessage({
       conversation,
       prompt: content,
       model: modelValue.value,
-      history: [...targetMessages],
-      onMessage: applyStreamUpdate,
+      history: [...targetMessages], // 传递当前完整的消息历史
+      onMessage: applyStreamUpdate, // 流式更新回调
     });
 
-    // 如果 adapter 没有使用流式处理，手动处理返回的消息
+    // 兼容性处理：如果适配器没有使用流式处理，手动处理返回的完整消息
+    // 这主要是为了向后兼容非流式适配器
     if (!responseMessage) {
       const finalResponse = normalizeAssistantMessage(responseRaw);
       responseMessage = finalResponse;
@@ -608,8 +649,10 @@ async function handleSend(message?: string) {
       });
     }
   } catch (error) {
+    // 错误处理：显示错误信息给用户
     errorMessage.value = (error as Error).message ?? '发送失败，请稍后再试';
   } finally {
+    // 最终状态重置
     loading.value = false;
     nextTick(scrollToBottom);
   }
@@ -734,11 +777,38 @@ async function streamMockResponse(
   return result;
 }
 
+/**
+ * 创建内置的默认适配器
+ *
+ * 这个适配器用于在没有提供外部适配器时提供基础功能。
+ * 主要用于演示和测试，它模拟了流式响应的效果。
+ *
+ * 实现要点：
+ * 1. 延迟模拟网络请求时间
+ * 2. 使用流式响应模式（如果提供了 onMessage 回调）
+ * 3. 提供基础的对话功能
+ *
+ * @returns AiChatAdapter 默认适配器实例
+ */
 function createFallbackAdapter(): AiChatAdapter {
   return {
+    /**
+     * 发送消息并返回助手回复
+     *
+     * @param payload 消息发送参数
+     * @param payload.conversation 会话信息
+     * @param payload.prompt 用户输入的提示词
+     * @param payload.model 使用的模型名称
+     * @param payload.history 历史消息数组
+     * @param payload.onMessage 可选的流式更新回调
+     * @returns Promise<ChatMessage> 助手回复消息
+     */
     async sendMessage({ prompt, onMessage }) {
+      // 模拟网络延迟
       await delay(160);
       const finalText = `模拟回复：${prompt}`;
+
+      // 创建基础消息对象（初始内容为空）
       const base = createMessage({
         role: 'assistant',
         content: '',
@@ -746,6 +816,7 @@ function createFallbackAdapter(): AiChatAdapter {
 
       if (onMessage) {
         // 启动流式响应但不等待完成
+        // 关键：适配器应该立即返回，让流式更新在后台进行
         streamMockResponse(finalText, base, onMessage).catch(error => {
           console.error('Stream error:', error);
         });
@@ -753,15 +824,30 @@ function createFallbackAdapter(): AiChatAdapter {
         return base;
       }
 
-      // 如果没有流式处理器，直接返回完整响应
+      // 如果没有流式处理器，直接返回完整响应（向后兼容）
       return createMessage({
         role: 'assistant',
         content: finalText,
       });
     },
+
+    /**
+     * 重新生成指定消息的回复
+     *
+     * @param payload 重新生成参数
+     * @param payload.conversation 会话信息
+     * @param payload.message 要重新生成的消息
+     * @param payload.model 使用的模型名称
+     * @param payload.history 历史消息数组
+     * @param payload.onMessage 可选的流式更新回调
+     * @returns Promise<ChatMessage> 重新生成的回复消息
+     */
     async regenerate({ message, onMessage }) {
+      // 模拟网络延迟
       await delay(160);
       const finalText = `重新生成结果：${message.content}`;
+
+      // 创建基础消息对象，保持原消息ID
       const base = createMessage({
         role: 'assistant',
         content: '',
@@ -777,7 +863,7 @@ function createFallbackAdapter(): AiChatAdapter {
         return base;
       }
 
-      // 如果没有流式处理器，直接返回完整响应
+      // 如果没有流式处理器，直接返回完整响应（向后兼容）
       return createMessage({
         role: 'assistant',
         content: finalText,

@@ -19,16 +19,13 @@ import type { ChatRequest } from '#shared/types/api/chat';
  * @param model
  * @param temperature
  * @param conversationId
+ * @param tools
  */
-export const genCodeBaseTemplate = async ({
-  messages,
-  model,
-  temperature,
-  conversationId,
-}: ChatRequest) => {
+export const genCodeBaseTemplate = async (
+  { messages, model, temperature, conversationId }: ChatRequest,
+  tools
+) => {
   // 初始化mcp工具
-  const mcpTools = await initTemplateTools();
-  const localTools = initLocalTools();
   const templateContext = conversationId
     ? templateContextStorage.getContext(conversationId)
     : undefined;
@@ -36,7 +33,7 @@ export const genCodeBaseTemplate = async ({
   const result = streamText({
     model: llmProvider(model),
     temperature,
-    tools: { ...mcpTools, ...localTools },
+    tools,
     stopWhen: stepCountIs(5),
     system: templateGenPrompt(true, templateContext),
     providerOptions: {

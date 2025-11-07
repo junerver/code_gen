@@ -3,23 +3,27 @@
  * @Author 侯文君
  * @Date 2025-09-02 8:52
  * @LastEditors 侯文君
- * @LastEditTime 2025-09-19 10:29
+ * @LastEditTime 2025-11-07 15:38
  */
 
 import { experimental_createMCPClient } from 'ai';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
 import z from 'zod';
+import { DynamicHeaderTransport } from '#server/utils/DynamicHeaderTransport';
 
 const MCP_SERVER_DIRECTORY = useRuntimeConfig().mcpServerDirectory;
 
 /**
  * 模板工具
+ * new StdioClientTransport({
+ *     command: 'uv',
+ *     args: ['--directory', MCP_SERVER_DIRECTORY, 'run', 'template_mcp'],
+ *   })
  */
 const templateClientPromise = experimental_createMCPClient({
-  transport: new StdioClientTransport({
-    command: 'uv',
-    args: ['--directory', MCP_SERVER_DIRECTORY, 'run', 'template_mcp'],
-  }),
+  transport: new DynamicHeaderTransport(
+    new URL('http://192.168.172.110:3005/sse')
+  ),
 });
 
 /**
